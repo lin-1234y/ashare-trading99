@@ -301,6 +301,21 @@ button {
   font-size: 24px;
 }
 
+.range-summary {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.range-summary .metric {
+  padding: 14px;
+  box-shadow: none;
+}
+
+.range-summary .metric strong {
+  font-size: 20px;
+}
+
 .panel-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
@@ -1001,6 +1016,11 @@ td {
     gap: 10px;
   }
 
+  .range-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
   .metric span {
     margin-bottom: 0;
     font-size: 12px;
@@ -1237,6 +1257,10 @@ td {
             <section class="panel">
               <div class="panel-header">
                 <h3>阶段盈亏日历</h3>
+                <label class="search-box">
+                  <span>年月</span>
+                  <input type="month" id="calendar-month" />
+                </label>
               </div>
               <div class="equity-chart" id="equity-chart"></div>
               <div class="table-wrap compact-table">
@@ -1255,6 +1279,26 @@ td {
               <div class="mobile-list" id="equity-curve-cards"></div>
             </section>
           </div>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <div>
+                <h3>任意区间盈亏</h3>
+                <span>选择开始和结束日期，统计这段时间的阶段盈亏</span>
+              </div>
+              <div class="date-filter">
+                <label>
+                  开始
+                  <input type="date" id="range-start-date" />
+                </label>
+                <label>
+                  结束
+                  <input type="date" id="range-end-date" />
+                </label>
+              </div>
+            </div>
+            <div class="range-summary" id="range-summary"></div>
+          </section>
 
           <section class="panel spacing-top">
             <div class="panel-header">
@@ -1829,6 +1873,10 @@ const els = {
   equityChart: optionalElement("#equity-chart"),
   equityCurveBody: optionalElement("#equity-curve-body"),
   equityCurveCards: optionalElement("#equity-curve-cards"),
+  calendarMonth: optionalElement("#calendar-month"),
+  rangeStartDate: optionalElement("#range-start-date"),
+  rangeEndDate: optionalElement("#range-end-date"),
+  rangeSummary: optionalElement("#range-summary"),
   backupReminder: optionalElement("#backup-reminder"),
   backupReminderText: optionalElement("#backup-reminder-text"),
   assets: document.querySelector("#metric-assets"),
@@ -1916,6 +1964,40 @@ function number(value, digits = 2) {
 
 function today() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function currentMonthKey() {
+  return today().slice(0, 7);
+}
+
+function monthStartDate(monthKey = currentMonthKey()) {
+  return `${monthKey}-01`;
+}
+
+function monthEndDate(monthKey = currentMonthKey()) {
+  const [year, month] = monthKey.split("-").map(Number);
+  return `${monthKey}-${String(new Date(year, month, 0).getDate()).padStart(2, "0")}`;
+}
+
+function validDateString(date) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(date || ""));
+}
+
+function dateRangeBounds(startDate = "", endDate = "") {
+  const start = validDateString(startDate) ? startDate : "";
+  const end = validDateString(endDate) ? endDate : "";
+  if (start && end && start > end) {
+    return { startDate: end, endDate: start };
+  }
+  return { startDate: start, endDate: end };
+}
+
+function dateInRange(date, startDate = "", endDate = "") {
+  if (!validDateString(date)) return false;
+  const range = dateRangeBounds(startDate, endDate);
+  if (range.startDate && date < range.startDate) return false;
+  if (range.endDate && date > range.endDate) return false;
+  return true;
 }
 
 function daysSince(dateString) {
@@ -2299,6 +2381,37 @@ function periodPnlSummary(rows) {
     },
     { month: 0, year: 0, monthKey, yearKey },
   );
+}
+
+function calculateRangeSummary(startDate = "", endDate = "") {
+  const range = dateRangeBounds(startDate, endDate);
+  const rows = calculatePnlCalendarRows().filter((row) => dateInRange(row.date, range.startDate, range.endDate));
+  const trades = state.trades.filter((trade) => dateInRange(trade.date, range.startDate, range.endDate));
+  const dividends = state.corporateActions
+    .filter((action) => action.type === "dividend" && dateInRange(action.date, range.startDate, range.endDate))
+    .reduce((sum, action) => sum + (Number(action.value) || 0), 0);
+  const buyAmount = trades.filter((trade) => trade.side === "buy").reduce((sum, trade) => sum + tradeAmount(trade), 0);
+  const sellAmount = trades.filter((trade) => trade.side === "sell").reduce((sum, trade) => sum + tradeAmount(trade), 0);
+  const fees = trades.reduce((sum, trade) => sum + totalFee(trade), 0);
+  const matched = calculateTradePairPnL().reduce((sum, row) => {
+    const rangePnl = (row.matchDetails || []).reduce((detailSum, detail) => {
+      const completionDate = detail.buyDate > detail.sellDate ? detail.buyDate : detail.sellDate;
+      return dateInRange(completionDate, range.startDate, range.endDate) ? detailSum + detail.pnl : detailSum;
+    }, 0);
+    return sum + rangePnl;
+  }, 0);
+
+  return {
+    ...range,
+    pnl: rows.reduce((sum, row) => sum + row.periodPnl, 0),
+    totalPnl: rows.reduce((sum, row) => sum + row.periodPnl, 0) + dividends,
+    matched,
+    tradeCount: trades.length,
+    buyAmount,
+    sellAmount,
+    fees,
+    dividends,
+  };
 }
 
 function stockNameMap() {
@@ -3074,6 +3187,7 @@ function renderDashboard() {
 
   renderAllocation(positions);
   renderEquityCurve();
+  renderRangeSummary();
   renderTradePairPnL();
   renderStockTimeline();
   renderReports();
@@ -3146,6 +3260,7 @@ function renderAllocation(positions) {
 function renderEquityCurve() {
   const chronological = calculatePnlCalendarRows();
   const rows = chronological.slice(-8).reverse();
+  if (!els.calendarMonth.value) els.calendarMonth.value = currentMonthKey();
   renderPnlCalendar(chronological);
 
   els.equityCurveBody.innerHTML = rows
@@ -3181,16 +3296,8 @@ function renderEquityCurve() {
 }
 
 function renderPnlCalendar(rows) {
-  if (!rows.length) {
-    els.equityChart.innerHTML = `<div class="empty-state">暂无阶段盈亏记录</div>`;
-    return;
-  }
-
-  const latest = latestDatedRow(rows);
-  const today = new Date();
-  const year = latest ? Number(latest.date.slice(0, 4)) : today.getFullYear();
-  const month = latest ? Number(latest.date.slice(5, 7)) : today.getMonth() + 1;
-  const monthKey = `${year}-${String(month).padStart(2, "0")}`;
+  const monthKey = els.calendarMonth.value || currentMonthKey();
+  const [year, month] = monthKey.split("-").map(Number);
   const pnlByDate = new Map(rows.filter((row) => row.date.startsWith(monthKey)).map((row) => [row.date, row.periodPnl]));
   const firstDay = new Date(year, month - 1, 1).getDay();
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -3218,6 +3325,34 @@ function renderPnlCalendar(rows) {
       ${cells.join("")}
     </div>
   `;
+}
+
+function renderRangeSummary() {
+  if (!els.rangeStartDate.value) els.rangeStartDate.value = monthStartDate(currentMonthKey());
+  if (!els.rangeEndDate.value) els.rangeEndDate.value = today();
+
+  const summary = calculateRangeSummary(els.rangeStartDate.value, els.rangeEndDate.value);
+  const cards = [
+    { label: "区间总盈亏", value: money(summary.totalPnl), tone: classByValue(summary.totalPnl) },
+    { label: "交易/浮动盈亏", value: money(summary.pnl), tone: classByValue(summary.pnl) },
+    { label: "匹配实现", value: money(summary.matched), tone: classByValue(summary.matched) },
+    { label: "交易次数", value: `${summary.tradeCount} 笔`, tone: "" },
+    { label: "买入金额", value: money(summary.buyAmount), tone: "" },
+    { label: "卖出金额", value: money(summary.sellAmount), tone: "" },
+    { label: "手续费", value: money(summary.fees), tone: "" },
+    { label: "分红", value: money(summary.dividends), tone: classByValue(summary.dividends) },
+  ];
+
+  els.rangeSummary.innerHTML = cards
+    .map(
+      (card) => `
+        <article class="metric">
+          <span>${card.label}</span>
+          <strong class="${card.tone}">${card.value}</strong>
+        </article>
+      `,
+    )
+    .join("");
 }
 
 function renderEquityChart(rows) {
@@ -3969,6 +4104,9 @@ document.querySelector("#import-data").addEventListener("change", (event) => {
 });
 
 els.recordFilter.addEventListener("input", renderRecords);
+els.calendarMonth.addEventListener("change", renderEquityCurve);
+els.rangeStartDate.addEventListener("change", renderRangeSummary);
+els.rangeEndDate.addEventListener("change", renderRangeSummary);
 els.pairStartDate.addEventListener("change", renderTradePairPnL);
 els.pairEndDate.addEventListener("change", renderTradePairPnL);
 els.timelineSymbol.addEventListener("change", renderStockTimeline);
