@@ -11,18 +11,20 @@
     <style>
 :root {
   color-scheme: light;
-  --bg: #f5f7fb;
+  --bg: #eef6f4;
   --surface: #ffffff;
-  --surface-2: #eef3f8;
+  --surface-2: #edf5f2;
   --text: #17202a;
   --muted: #697586;
-  --line: #d9e1ea;
-  --primary: #176b87;
-  --primary-strong: #114e62;
-  --buy: #c23b42;
-  --sell: #18805f;
-  --warning: #b76e00;
-  --shadow: 0 18px 45px rgba(30, 48, 70, 0.08);
+  --line: #d5e1df;
+  --primary: #0f7c80;
+  --primary-strong: #0b5961;
+  --buy: #c9364b;
+  --sell: #0f8f68;
+  --warning: #c98212;
+  --gold: #d5a33f;
+  --ink: #0d2b33;
+  --shadow: 0 18px 45px rgba(26, 66, 78, 0.1);
 }
 
 * {
@@ -32,7 +34,10 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--bg);
+  background:
+    linear-gradient(135deg, rgba(15, 124, 128, 0.12), transparent 28%),
+    linear-gradient(225deg, rgba(213, 163, 63, 0.16), transparent 35%),
+    var(--bg);
   color: var(--text);
   font-family:
     Inter, "Microsoft YaHei", "PingFang SC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
@@ -56,7 +61,7 @@ button {
 }
 
 .sidebar {
-  background: #10242d;
+  background: linear-gradient(180deg, #0d2b33 0%, #10242d 55%, #183943 100%);
   color: #f7fbfd;
   padding: 26px 20px;
   display: flex;
@@ -111,7 +116,7 @@ button {
 
 .nav-button:hover,
 .nav-button.active {
-  background: #1b3945;
+  background: linear-gradient(135deg, #1b5960, #1b3945);
   color: #ffffff;
 }
 
@@ -132,6 +137,25 @@ button {
 .sidebar-card strong {
   display: block;
   margin: 6px 0;
+}
+
+.backup-reminder {
+  display: none;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border: 1px solid #e8c16a;
+  border-radius: 8px;
+  background: #fff8e6;
+  color: #5f4310;
+  line-height: 1.5;
+}
+
+.backup-reminder.active {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .content {
@@ -184,7 +208,7 @@ button {
 }
 
 .primary-button {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), #15946f);
   color: #ffffff;
 }
 
@@ -247,7 +271,7 @@ button {
 .metric,
 .panel,
 .form-panel {
-  background: var(--surface);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdfc 100%);
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: var(--shadow);
@@ -255,6 +279,15 @@ button {
 
 .metric {
   padding: 18px;
+  border-top: 3px solid rgba(15, 124, 128, 0.28);
+}
+
+.metric:nth-child(3n + 2) {
+  border-top-color: rgba(213, 163, 63, 0.55);
+}
+
+.metric:nth-child(3n) {
+  border-top-color: rgba(201, 54, 75, 0.28);
 }
 
 .metric span {
@@ -880,7 +913,7 @@ td {
 
 @media (max-width: 620px) {
   body {
-    padding-bottom: 78px;
+    padding-bottom: 124px;
   }
 
   input,
@@ -889,12 +922,18 @@ td {
   }
 
   .content {
-    padding: 14px;
+    padding: 12px 10px 132px;
   }
 
   .topbar {
     align-items: flex-start;
     flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .topbar h2 {
+    font-size: 22px;
   }
 
   .nav {
@@ -903,18 +942,20 @@ td {
     right: 0;
     bottom: 0;
     z-index: 20;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 0;
-    padding: 8px;
-    background: #10242d;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+    background: rgba(13, 43, 51, 0.98);
     border-top: 1px solid rgba(255, 255, 255, 0.12);
   }
 
   .nav-button {
-    min-height: 44px;
-    padding: 0 3px;
-    font-size: 11px;
+    min-height: 38px;
+    padding: 0 6px;
+    font-size: 12px;
     border-radius: 8px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.05);
   }
 
   .sidebar {
@@ -944,12 +985,12 @@ td {
   }
 
   .metric strong {
-    font-size: 16px;
+    font-size: 17px;
   }
 
   .metric {
-    min-height: 62px;
-    padding: 10px 12px;
+    min-height: 68px;
+    padding: 11px 12px;
     display: grid;
     align-content: center;
     gap: 4px;
@@ -971,7 +1012,7 @@ td {
 
   .panel,
   .form-panel {
-    padding: 14px;
+    padding: 14px 12px;
   }
 
   .timeline-item {
@@ -993,6 +1034,16 @@ td {
   .allocation-layout {
     grid-template-columns: 1fr;
     justify-items: center;
+    gap: 12px;
+  }
+
+  .pie-chart {
+    width: min(68vw, 210px);
+  }
+
+  .pie-chart span {
+    max-width: 94px;
+    font-size: 14px;
   }
 
   .allocation-list {
@@ -1000,7 +1051,23 @@ td {
   }
 
   .allocation-row {
-    grid-template-columns: 12px minmax(70px, 1fr) 52px 92px;
+    width: 100%;
+    grid-template-columns: 12px minmax(0, 1fr) 56px;
+    gap: 6px 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(213, 225, 223, 0.75);
+  }
+
+  .allocation-row strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .allocation-row span:last-child {
+    grid-column: 2 / 4;
+    justify-self: start;
+    font-weight: 800;
+    color: var(--text);
   }
 
   .pnl-calendar {
@@ -1037,6 +1104,19 @@ td {
   .mobile-list {
     display: grid;
     gap: 12px;
+  }
+
+  .mobile-card {
+    padding: 13px 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbfa 100%);
+  }
+
+  .mobile-card dl {
+    gap: 9px 12px;
+  }
+
+  .mobile-card-head strong {
+    overflow-wrap: anywhere;
   }
 }
 
@@ -1082,6 +1162,11 @@ td {
         </header>
 
         <section class="view active" id="dashboard">
+          <section class="backup-reminder" id="backup-reminder">
+            <span id="backup-reminder-text">建议导出备份，防止浏览器数据丢失。</span>
+            <button class="ghost-button small" data-jump="settings" type="button">去备份</button>
+          </section>
+
           <div class="metric-grid six">
             <article class="metric">
               <span>总资产</span>
@@ -1433,6 +1518,13 @@ td {
 
           <section class="panel spacing-top">
             <div class="panel-header">
+              <h3>匹配明细</h3>
+            </div>
+            <div class="timeline-list" id="detail-matches"></div>
+          </section>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
               <h3>完整时间线</h3>
             </div>
             <div class="timeline-list" id="detail-timeline"></div>
@@ -1640,8 +1732,10 @@ td {
                 <h3>数据导出</h3>
               </div>
               <p class="panel-copy">导出 JSON 后可以作为备份，换浏览器或换电脑时再导入。</p>
+              <p class="panel-copy" id="backup-status">还没有备份记录。</p>
               <div class="stack-actions">
-                <button class="primary-button" id="export-data">导出数据</button>
+                <button class="primary-button" id="export-data">导出备份</button>
+                <button class="ghost-button" id="export-csv" type="button">导出CSV</button>
                 <label class="file-button">
                   导入数据
                   <input type="file" id="import-data" accept="application/json" />
@@ -1669,6 +1763,7 @@ const defaultSettings = {
   minCommission: 5,
   stampRate: 0.0005,
   transferRate: 0.00001,
+  lastBackupAt: "",
 };
 
 const state = {
@@ -1734,6 +1829,8 @@ const els = {
   equityChart: optionalElement("#equity-chart"),
   equityCurveBody: optionalElement("#equity-curve-body"),
   equityCurveCards: optionalElement("#equity-curve-cards"),
+  backupReminder: optionalElement("#backup-reminder"),
+  backupReminderText: optionalElement("#backup-reminder-text"),
   assets: document.querySelector("#metric-assets"),
   totalReturn: optionalElement("#metric-total-return"),
   cash: document.querySelector("#metric-cash"),
@@ -1763,6 +1860,7 @@ const els = {
   detailMetrics: optionalElement("#detail-metrics"),
   detailCompare: optionalElement("#detail-compare"),
   detailUnmatched: optionalElement("#detail-unmatched"),
+  detailMatches: optionalElement("#detail-matches"),
   detailTimeline: optionalElement("#detail-timeline"),
   initialCash: document.querySelector("#initial-cash"),
   accountSaveStatus: optionalElement("#account-save-status"),
@@ -1788,6 +1886,7 @@ const els = {
   actionNote: optionalElement("#action-note"),
   corporateActionsBody: optionalElement("#corporate-actions-body"),
   corporateActionsCards: optionalElement("#corporate-actions-cards"),
+  backupStatus: optionalElement("#backup-status"),
 };
 
 const titles = {
@@ -1817,6 +1916,27 @@ function number(value, digits = 2) {
 
 function today() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function daysSince(dateString) {
+  if (!dateString) return Infinity;
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return Infinity;
+  return Math.floor((Date.now() - date.getTime()) / 86400000);
+}
+
+function backupStatusText() {
+  const lastBackup = state.settings.lastBackupAt;
+  if (!lastBackup) return "还没有备份记录，建议先导出一次 JSON 备份。";
+  const days = Math.max(0, daysSince(lastBackup));
+  const date = new Date(lastBackup).toLocaleString("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `上次备份：${date}，距今 ${days} 天。`;
 }
 
 function normalizeSymbol(symbol) {
@@ -2345,6 +2465,7 @@ function calculateTradePairPnL(startDate = "", endDate = "", sourceTrades = stat
       buyCost: 0,
       sellIncome: 0,
       pnl: 0,
+      matchDetails: [],
     };
     const amount = tradeAmount(trade);
     const fee = totalFee(trade);
@@ -2365,6 +2486,16 @@ function calculateTradePairPnL(startDate = "", endDate = "", sourceTrades = stat
         book.buyCost += buyCost;
         book.sellIncome += sellIncome;
         book.pnl += sellIncome - buyCost;
+        book.matchDetails.push({
+          quantity: used,
+          buyDate: trade.date,
+          buyPrice: trade.price,
+          sellDate: lot.date,
+          sellPrice: lot.price,
+          buyCost,
+          sellIncome,
+          pnl: sellIncome - buyCost,
+        });
         lot.quantity -= used;
         remaining -= used;
         if (lot.quantity <= 0.000001) book.sellLots.pop();
@@ -2375,6 +2506,7 @@ function calculateTradePairPnL(startDate = "", endDate = "", sourceTrades = stat
           quantity: remaining,
           unitCost: unitNet,
           price: trade.price,
+          date: trade.date,
         });
       }
     } else {
@@ -2389,6 +2521,16 @@ function calculateTradePairPnL(startDate = "", endDate = "", sourceTrades = stat
         book.buyCost += buyCost;
         book.sellIncome += sellIncome;
         book.pnl += sellIncome - buyCost;
+        book.matchDetails.push({
+          quantity: used,
+          buyDate: lot.date,
+          buyPrice: lot.price,
+          sellDate: trade.date,
+          sellPrice: trade.price,
+          buyCost,
+          sellIncome,
+          pnl: sellIncome - buyCost,
+        });
         lot.quantity -= used;
         remaining -= used;
         if (lot.quantity <= 0.000001) book.buyLots.pop();
@@ -2399,6 +2541,7 @@ function calculateTradePairPnL(startDate = "", endDate = "", sourceTrades = stat
           quantity: remaining,
           unitIncome: unitNet,
           price: trade.price,
+          date: trade.date,
         });
       }
     }
@@ -2643,6 +2786,17 @@ function stockFeeTotal(symbol) {
   return state.trades
     .filter((trade) => normalizeSymbol(trade.symbol) === key)
     .reduce((sum, trade) => sum + totalFee(trade), 0);
+}
+
+function stockInvestedCost(symbol) {
+  const key = normalizeSymbol(symbol);
+  const initialCost = state.initialPositions
+    .filter((item) => normalizeSymbol(item.symbol) === key)
+    .reduce((sum, item) => sum + (Number(item.cost) || 0), 0);
+  const buyCost = state.trades
+    .filter((trade) => normalizeSymbol(trade.symbol) === key && trade.side === "buy")
+    .reduce((sum, trade) => sum + tradeAmount(trade) + totalFee(trade), 0);
+  return initialCost + buyCost;
 }
 
 function openStockDetail(symbol) {
@@ -2911,6 +3065,12 @@ function renderDashboard() {
   els.yearPnl.className = classByValue(periodSummary.year);
   els.realized.className = classByValue(matchedRealized);
   els.summaryCount.textContent = `${state.trades.length} 笔交易`;
+  const backupAge = daysSince(state.settings.lastBackupAt);
+  const shouldRemindBackup = !state.settings.lastBackupAt || backupAge >= 7;
+  els.backupReminder.className = shouldRemindBackup ? "backup-reminder active" : "backup-reminder";
+  els.backupReminderText.textContent = shouldRemindBackup
+    ? `${backupStatusText()} 建议导出备份，防止浏览器数据丢失。`
+    : backupStatusText();
 
   renderAllocation(positions);
   renderEquityCurve();
@@ -3206,6 +3366,8 @@ function renderStockDetail() {
   const realized = position.quantity > 0 ? matchedRealized : closedRealized;
   const dividends = stockDividendTotal(symbol);
   const totalPnl = position.floating + realized + dividends;
+  const investedCost = stockInvestedCost(symbol);
+  const totalReturnRate = investedCost > 0 ? (totalPnl / investedCost) * 100 : 0;
   const status = position.quantity > 0 ? "当前持仓" : realized !== 0 || stockEvents(symbol).length ? "已清仓/历史" : "暂无记录";
   const startDate = firstStockDate(symbol);
   const lastEvent = stockEvents(symbol)[0];
@@ -3229,6 +3391,7 @@ function renderStockDetail() {
     <article class="metric"><span>低买高卖</span><strong class="${classByValue(matchedRealized)}">${money(matchedRealized)}</strong></article>
     <article class="metric"><span>累计分红</span><strong>${money(dividends)}</strong></article>
     <article class="metric"><span>总盈亏</span><strong class="${classByValue(totalPnl)}">${money(totalPnl)}</strong></article>
+    <article class="metric"><span>总收益率</span><strong class="${classByValue(totalReturnRate)}">${number(totalReturnRate, 2)}%</strong></article>
     <article class="metric"><span>已匹配数量</span><strong>${number(pair.matchedQuantity, 0)}</strong></article>
     <article class="metric"><span>未匹配数量</span><strong class="${classByValue(pair.unmatchedQuantity)}">${number(pair.unmatchedQuantity, 0)}</strong></article>
     <article class="metric"><span>当日盈亏</span><strong class="${classByValue(position.dayPnl)}">${money(position.dayPnl)}</strong></article>
@@ -3253,6 +3416,22 @@ function renderStockDetail() {
   els.detailUnmatched.innerHTML = pair.unmatchedDetails && pair.unmatchedDetails.length
     ? `<div class="mobile-card"><strong>${number(pair.unmatchedQuantity, 0)}</strong>${renderUnmatchedDetail(pair)}</div>`
     : `<div class="empty-state">暂无未匹配买卖</div>`;
+  els.detailMatches.innerHTML = pair.matchDetails && pair.matchDetails.length
+    ? pair.matchDetails
+        .map(
+          (match) => `
+            <article class="timeline-item">
+              <strong>${match.buyDate}<br>${match.sellDate}</strong>
+              <span class="tag ${match.pnl >= 0 ? "buy" : "sell"}">${number(match.quantity, 0)}股</span>
+              <div>
+                <strong class="${classByValue(match.pnl)}">${money(match.pnl)}</strong>
+                <p>买入 ${number(match.buyPrice, 3)}，卖出 ${number(match.sellPrice, 3)}；买入成本 ${money(match.buyCost)}，卖出收入 ${money(match.sellIncome)}</p>
+              </div>
+            </article>
+          `,
+        )
+        .join("")
+    : `<div class="empty-state">暂无匹配明细</div>`;
   els.detailTimeline.innerHTML = events.length
     ? events
         .map(
@@ -3331,6 +3510,7 @@ function renderSettings() {
   els.minCommission.value = state.settings.minCommission;
   els.stampRate.value = state.settings.stampRate;
   els.transferRate.value = state.settings.transferRate;
+  els.backupStatus.textContent = backupStatusText();
   renderCorporateActions();
 
   if (!state.initialPositions.length) {
@@ -3622,14 +3802,69 @@ function fillSampleData() {
   renderAll();
 }
 
-function exportData() {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+function downloadBlob(content, type, filename) {
+  const blob = new Blob([content], { type });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `ashare-trading-journal-${today()}.json`;
+  link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+function exportData() {
+  downloadBlob(JSON.stringify(state, null, 2), "application/json", `ashare-trading-journal-${today()}.json`);
+  state.settings.lastBackupAt = new Date().toISOString();
+  save();
+  renderAll();
+}
+
+function csvCell(value) {
+  const text = String(value ?? "");
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function exportCsv() {
+  const pnlByTrade = new Map(calculatePortfolio().realizedRows.map((row) => [row.tradeId, row.pnl]));
+  const rows = [
+    ["日期", "代码", "名称", "类型", "价格", "数量", "金额", "佣金", "印花税", "过户费", "总费用", "匹配盈亏", "备注"],
+    ...state.trades.map((trade) => {
+      const fees = tradeFees(trade);
+      const fee = fees.commission + fees.stampTax + fees.transferFee;
+      return [
+        trade.date,
+        trade.symbol,
+        trade.name,
+        trade.side === "buy" ? "买入" : "卖出",
+        trade.price,
+        trade.quantity,
+        tradeAmount(trade),
+        fees.commission,
+        fees.stampTax,
+        fees.transferFee,
+        fee,
+        trade.side === "sell" ? pnlByTrade.get(trade.id) || 0 : "",
+        trade.note || "",
+      ];
+    }),
+    ...state.corporateActions.map((action) => [
+      action.date || "",
+      action.symbol,
+      action.name,
+      action.type === "dividend" ? "现金分红" : "送股/转增",
+      "",
+      action.type === "bonus" ? action.value : "",
+      action.type === "dividend" ? action.value : "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      action.note || "",
+    ]),
+  ];
+  const body = rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
+  downloadBlob(`\ufeff${body}`, "text/csv;charset=utf-8", `ashare-trading-flow-${today()}.csv`);
 }
 
 function importData(file) {
@@ -3691,6 +3926,7 @@ els.form.addEventListener("submit", (event) => {
 document.querySelector("#reset-form").addEventListener("click", resetForm);
 document.querySelector("#sample-data").addEventListener("click", fillSampleData);
 document.querySelector("#export-data").addEventListener("click", exportData);
+document.querySelector("#export-csv").addEventListener("click", exportCsv);
 document.querySelector("#save-account").addEventListener("click", saveAccountSettings);
 els.initialCash.addEventListener("input", saveAccountSettings);
 els.initialCash.addEventListener("change", saveAccountSettings);
