@@ -395,6 +395,10 @@ button {
   border-radius: 999px;
 }
 
+.swatch.cash {
+  background: #7b8794;
+}
+
 .compact-table table {
   min-width: 560px;
 }
@@ -528,6 +532,49 @@ button {
   margin: 4px 0 0;
   color: var(--muted);
   line-height: 1.45;
+}
+
+.detail-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.detail-hero h3 {
+  margin: 0 0 6px;
+  font-size: 22px;
+}
+
+.detail-hero p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.compare-card {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+
+.compare-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.compare-card strong {
+  font-size: 22px;
 }
 
 .report-grid {
@@ -931,6 +978,14 @@ td {
     grid-template-columns: 1fr;
   }
 
+  .detail-hero {
+    flex-direction: column;
+  }
+
+  .compare-grid {
+    grid-template-columns: 1fr;
+  }
+
   .report-grid {
     grid-template-columns: 1fr;
   }
@@ -1002,7 +1057,7 @@ td {
           <button class="nav-button active" data-view="dashboard">总览</button>
           <button class="nav-button" data-view="trade-form">新增交易</button>
           <button class="nav-button" data-view="positions">持仓</button>
-          <button class="nav-button" data-view="records">交易记录</button>
+          <button class="nav-button" data-view="records">流水记录</button>
           <button class="nav-button" data-view="reports">复盘报表</button>
           <button class="nav-button" data-view="settings">设置</button>
         </nav>
@@ -1049,6 +1104,10 @@ td {
               <strong id="metric-cost">¥0.00</strong>
             </article>
             <article class="metric">
+              <span>浮动盈亏</span>
+              <strong id="metric-unrealized">¥0.00</strong>
+            </article>
+            <article class="metric">
               <span>总盈亏</span>
               <strong id="metric-floating">¥0.00</strong>
             </article>
@@ -1065,7 +1124,7 @@ td {
               <strong id="metric-year-pnl">¥0.00</strong>
             </article>
             <article class="metric">
-              <span>匹配实现盈亏</span>
+              <span>实现盈亏</span>
               <strong id="metric-realized">¥0.00</strong>
             </article>
             <article class="metric">
@@ -1157,6 +1216,7 @@ td {
                 <span>股票</span>
                 <select id="timeline-symbol"></select>
               </label>
+              <button class="ghost-button small" id="open-timeline-detail" type="button">打开详情</button>
             </div>
             <div class="timeline-list" id="stock-timeline"></div>
           </section>
@@ -1292,14 +1352,16 @@ td {
                     <th>代码</th>
                     <th>名称</th>
                     <th>数量</th>
-                    <th>平均成本</th>
+                    <th>原始成本</th>
                     <th>现在成本</th>
                     <th>当前价</th>
                     <th>市值</th>
                     <th>当日盈亏</th>
                     <th>浮动盈亏</th>
                     <th>收益率</th>
-                    <th>匹配已实现</th>
+                    <th>实现盈亏</th>
+                    <th>总盈亏</th>
+                    <th>详情</th>
                   </tr>
                 </thead>
                 <tbody id="positions-body"></tbody>
@@ -1307,15 +1369,83 @@ td {
             </div>
             <div class="mobile-list" id="positions-cards"></div>
           </section>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <div>
+                <h3>已清仓 / 历史持仓</h3>
+                <span>股数为 0 的股票仍保留复盘数据</span>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>代码</th>
+                    <th>名称</th>
+                    <th>清仓日期</th>
+                    <th>持有天数</th>
+                    <th>实现盈亏</th>
+                    <th>分红</th>
+                    <th>总费用</th>
+                    <th>最终盈亏</th>
+                    <th>详情</th>
+                  </tr>
+                </thead>
+                <tbody id="closed-positions-body"></tbody>
+              </table>
+            </div>
+            <div class="mobile-list" id="closed-positions-cards"></div>
+          </section>
+        </section>
+
+        <section class="view" id="stock-detail">
+          <section class="panel">
+            <div class="detail-hero">
+              <div>
+                <h3 id="detail-title">个股详情</h3>
+                <p id="detail-subtitle">当前持仓、已清仓总结与低买高卖效果</p>
+              </div>
+              <div class="panel-actions">
+                <button class="ghost-button small" data-jump="positions" type="button">返回持仓</button>
+                <button class="ghost-button small" data-jump="reports" type="button">返回复盘</button>
+              </div>
+            </div>
+            <div class="metric-grid six" id="detail-metrics"></div>
+          </section>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <div>
+                <h3>持股不动 vs 低买高卖</h3>
+                <span>浮动盈亏代表持股不动部分；实现盈亏代表低买高卖已经落袋的部分</span>
+              </div>
+            </div>
+            <div class="compare-grid" id="detail-compare"></div>
+          </section>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <h3>未匹配明细</h3>
+            </div>
+            <div id="detail-unmatched"></div>
+          </section>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <h3>完整时间线</h3>
+            </div>
+            <div class="timeline-list" id="detail-timeline"></div>
+          </section>
         </section>
 
         <section class="view" id="records">
           <section class="panel">
             <div class="panel-header">
-              <h3>交易记录</h3>
+              <h3>流水记录</h3>
               <label class="search-box">
                 <span>筛选</span>
-                <input type="search" id="record-filter" placeholder="代码 / 名称 / 备注" />
+                <input type="search" id="record-filter" placeholder="代码 / 名称 / 类型 / 备注" />
               </label>
             </div>
             <div class="table-wrap">
@@ -1325,7 +1455,7 @@ td {
                     <th>日期</th>
                     <th>代码</th>
                     <th>名称</th>
-                    <th>方向</th>
+                    <th>类型</th>
                     <th>价格</th>
                     <th>数量</th>
                     <th>金额</th>
@@ -1549,6 +1679,7 @@ const state = {
   corporateActions: [],
   settings: { ...defaultSettings },
 };
+let selectedDetailSymbol = "";
 
 function optionalElement(selector) {
   return (
@@ -1593,6 +1724,8 @@ const els = {
   recordsCards: optionalElement("#records-cards"),
   positionsBody: document.querySelector("#positions-body"),
   positionsCards: optionalElement("#positions-cards"),
+  closedPositionsBody: optionalElement("#closed-positions-body"),
+  closedPositionsCards: optionalElement("#closed-positions-cards"),
   quoteStatus: optionalElement("#quote-status"),
   recordFilter: document.querySelector("#record-filter"),
   summaryCount: document.querySelector("#summary-count"),
@@ -1606,6 +1739,7 @@ const els = {
   cash: document.querySelector("#metric-cash"),
   marketValue: document.querySelector("#metric-market-value"),
   cost: document.querySelector("#metric-cost"),
+  unrealized: optionalElement("#metric-unrealized"),
   floating: document.querySelector("#metric-floating"),
   dayPnl: optionalElement("#metric-day-pnl"),
   monthPnl: optionalElement("#metric-month-pnl"),
@@ -1623,6 +1757,13 @@ const els = {
   monthlyReportCards: optionalElement("#monthly-report-cards"),
   yearlyReportBody: optionalElement("#yearly-report-body"),
   yearlyReportCards: optionalElement("#yearly-report-cards"),
+  openTimelineDetail: optionalElement("#open-timeline-detail"),
+  detailTitle: optionalElement("#detail-title"),
+  detailSubtitle: optionalElement("#detail-subtitle"),
+  detailMetrics: optionalElement("#detail-metrics"),
+  detailCompare: optionalElement("#detail-compare"),
+  detailUnmatched: optionalElement("#detail-unmatched"),
+  detailTimeline: optionalElement("#detail-timeline"),
   initialCash: document.querySelector("#initial-cash"),
   accountSaveStatus: optionalElement("#account-save-status"),
   commissionRate: document.querySelector("#commission-rate"),
@@ -1653,8 +1794,9 @@ const titles = {
   dashboard: "总览",
   "trade-form": "新增交易",
   positions: "持仓",
-  records: "交易记录",
+  records: "流水记录",
   reports: "复盘报表",
+  "stock-detail": "个股详情",
   settings: "设置",
 };
 
@@ -1784,9 +1926,13 @@ function buildInitialBooks() {
       buyCount: 0,
       sellCount: 0,
       totalFees: 0,
+      originalQuantity: 0,
+      originalCost: 0,
     };
 
     book.name = item.name || book.name;
+    book.originalQuantity += Number(item.quantity) || 0;
+    book.originalCost += Number(item.cost) || 0;
     book.lots.push({
       quantity: item.quantity,
       unitCost: item.quantity > 0 ? item.cost / item.quantity : 0,
@@ -1818,6 +1964,8 @@ function applyBonusActions(books) {
       buyCount: 0,
       sellCount: 0,
       totalFees: 0,
+      originalQuantity: 0,
+      originalCost: 0,
     };
     const currentQuantity = book.lots.reduce((sum, lot) => sum + lot.quantity, 0);
     const totalCost = book.lots.reduce((sum, lot) => sum + lot.quantity * lot.unitCost, 0);
@@ -1837,6 +1985,27 @@ function dividendTotal() {
     .reduce((sum, action) => sum + (Number(action.value) || 0), 0);
 }
 
+function applyOriginalCostAdjustments(books) {
+  const actions = [...state.corporateActions].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+
+  for (const action of actions) {
+    const key = normalizeSymbol(action.symbol);
+    const book = books.get(key);
+    if (!book || book.originalQuantity <= 0) continue;
+
+    const value = Number(action.value) || 0;
+    if (value <= 0) continue;
+
+    if (action.type === "bonus") {
+      book.originalQuantity += value;
+    }
+
+    if (action.type === "dividend") {
+      book.originalCost = Math.max(0, book.originalCost - value);
+    }
+  }
+}
+
 function calculatePortfolio(trades = state.trades) {
   const books = buildInitialBooks();
   applyBonusActions(books);
@@ -1853,6 +2022,8 @@ function calculatePortfolio(trades = state.trades) {
       buyCount: 0,
       sellCount: 0,
       totalFees: 0,
+      originalQuantity: 0,
+      originalCost: 0,
     };
     const fees = tradeFees(trade);
     const fee = fees.commission + fees.stampTax + fees.transferFee;
@@ -1862,6 +2033,10 @@ function calculatePortfolio(trades = state.trades) {
     book.totalFees += fee;
 
     if (trade.side === "buy") {
+      if (book.originalQuantity <= 0) {
+        book.originalQuantity = trade.quantity;
+        book.originalCost = amount + fee;
+      }
       book.lots.push({
         quantity: trade.quantity,
         unitCost: (amount + fee) / trade.quantity,
@@ -1904,6 +2079,8 @@ function calculatePortfolio(trades = state.trades) {
     books.set(key, book);
   }
 
+  applyOriginalCostAdjustments(books);
+
   const realizedRows = [];
   const positions = [...books.values()].map((book) => {
     const quantity = book.lots.reduce((sum, lot) => sum + lot.quantity, 0);
@@ -1921,6 +2098,7 @@ function calculatePortfolio(trades = state.trades) {
       name: book.name,
       quantity,
       cost,
+      initialAverageCost: book.originalQuantity > 0 ? book.originalCost / book.originalQuantity : 0,
       averageCost: quantity > 0 ? cost / quantity : 0,
       currentPrice,
       marketValue,
@@ -2337,40 +2515,178 @@ function updatePreview() {
   els.previewNet.textContent = money(net);
 }
 
+function buildFlowRecords() {
+  const pnlByTrade = new Map(calculatePortfolio().realizedRows.map((row) => [row.tradeId, row.pnl]));
+  const tradeFlows = state.trades.map((trade) => {
+    const fees = tradeFees(trade);
+    const fee = fees.commission + fees.stampTax + fees.transferFee;
+    return {
+      id: trade.id,
+      kind: "trade",
+      date: trade.date,
+      symbol: trade.symbol,
+      name: trade.name,
+      type: trade.side === "buy" ? "买入" : "卖出",
+      tone: trade.side,
+      price: number(trade.price, 3),
+      quantity: number(trade.quantity, 0),
+      amount: money(tradeAmount(trade)),
+      commission: money(fees.commission),
+      stampTax: money(fees.stampTax),
+      transferFee: money(fees.transferFee),
+      fee,
+      pnl: trade.side === "sell" ? pnlByTrade.get(trade.id) || 0 : null,
+      note: trade.note || "",
+      order: trade.createdAt || 0,
+    };
+  });
+  const actionFlows = state.corporateActions.map((action) => {
+    const isDividend = action.type === "dividend";
+    return {
+      id: action.id,
+      kind: "action",
+      date: action.date || "",
+      symbol: action.symbol,
+      name: action.name,
+      type: isDividend ? "现金分红" : "送股/转增",
+      tone: isDividend ? "sell" : "buy",
+      price: "-",
+      quantity: isDividend ? "-" : number(action.value, 0),
+      amount: isDividend ? money(action.value) : "-",
+      commission: "-",
+      stampTax: "-",
+      transferFee: "-",
+      fee: 0,
+      pnl: null,
+      note: action.note || "",
+      order: 0,
+    };
+  });
+
+  return [...tradeFlows, ...actionFlows].sort((a, b) => b.date.localeCompare(a.date) || b.order - a.order);
+}
+
+function stockEvents(symbol) {
+  const key = normalizeSymbol(symbol);
+  const tradeEvents = state.trades
+    .filter((trade) => normalizeSymbol(trade.symbol) === key)
+    .map((trade) => {
+      const fee = totalFee(trade);
+      return {
+        date: trade.date,
+        type: trade.side === "buy" ? "买入" : "卖出",
+        tone: trade.side,
+        detail: `${number(trade.quantity, 0)}股 × ¥${number(trade.price, 3)}，金额 ${money(tradeAmount(trade))}，费用 ${money(fee)}`,
+        note: trade.note,
+        order: trade.createdAt || 0,
+      };
+    });
+  const initialEvents = state.initialPositions
+    .filter((item) => normalizeSymbol(item.symbol) === key)
+    .map((item) => ({
+      date: item.date || "开始",
+      type: "初始",
+      tone: "",
+      detail: `${number(item.quantity, 0)}股，成本 ${money(item.cost)}`,
+      note: "",
+      order: 0,
+    }));
+  const actionEvents = state.corporateActions
+    .filter((action) => normalizeSymbol(action.symbol) === key)
+    .map((action) => ({
+      date: action.date,
+      type: action.type === "dividend" ? "分红" : "送股/转增",
+      tone: action.type === "dividend" ? "sell" : "buy",
+      detail: action.type === "dividend" ? `现金分红 ${money(action.value)}` : `增加 ${number(action.value, 0)}股`,
+      note: action.note,
+      order: 0,
+    }));
+
+  return [...initialEvents, ...tradeEvents, ...actionEvents].sort((a, b) => b.date.localeCompare(a.date) || b.order - a.order);
+}
+
+function firstStockDate(symbol) {
+  const key = normalizeSymbol(symbol);
+  const dates = [
+    ...state.initialPositions.filter((item) => normalizeSymbol(item.symbol) === key).map((item) => item.date),
+    ...state.trades.filter((trade) => normalizeSymbol(trade.symbol) === key).map((trade) => trade.date),
+    ...state.corporateActions.filter((action) => normalizeSymbol(action.symbol) === key).map((action) => action.date),
+  ].filter(Boolean);
+  return dates.sort((a, b) => a.localeCompare(b))[0] || "";
+}
+
+function holdingDays(startDate, endDate) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) return "-";
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+  return Math.max(1, Math.round((end - start) / 86400000) + 1);
+}
+
+function latestStockSellDate(symbol) {
+  const key = normalizeSymbol(symbol);
+  const dates = state.trades
+    .filter((trade) => normalizeSymbol(trade.symbol) === key && trade.side === "sell")
+    .map((trade) => trade.date)
+    .filter(Boolean);
+  return dates.sort((a, b) => b.localeCompare(a))[0] || "";
+}
+
+function stockDividendTotal(symbol) {
+  const key = normalizeSymbol(symbol);
+  return state.corporateActions
+    .filter((action) => normalizeSymbol(action.symbol) === key && action.type === "dividend")
+    .reduce((sum, action) => sum + (Number(action.value) || 0), 0);
+}
+
+function stockFeeTotal(symbol) {
+  const key = normalizeSymbol(symbol);
+  return state.trades
+    .filter((trade) => normalizeSymbol(trade.symbol) === key)
+    .reduce((sum, trade) => sum + totalFee(trade), 0);
+}
+
+function openStockDetail(symbol) {
+  selectedDetailSymbol = normalizeSymbol(symbol);
+  renderStockDetail();
+  setView("stock-detail");
+}
+
 function renderRecords() {
   const keyword = els.recordFilter.value.trim().toLowerCase();
-  const pnlByTrade = new Map(calculatePortfolio().realizedRows.map((row) => [row.tradeId, row.pnl]));
-  const records = [...state.trades]
-    .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt)
-    .filter((trade) => `${trade.symbol} ${trade.name} ${trade.note}`.toLowerCase().includes(keyword));
+  const records = buildFlowRecords().filter((row) => `${row.symbol} ${row.name} ${row.type} ${row.note}`.toLowerCase().includes(keyword));
 
   if (!records.length) {
-    els.recordsBody.innerHTML = `<tr><td colspan="13" class="empty-state">还没有交易记录</td></tr>`;
-    els.recordsCards.innerHTML = `<div class="empty-state">还没有交易记录</div>`;
+    els.recordsBody.innerHTML = `<tr><td colspan="13" class="empty-state">还没有流水记录</td></tr>`;
+    els.recordsCards.innerHTML = `<div class="empty-state">还没有流水记录</div>`;
     return;
   }
 
   els.recordsBody.innerHTML = records
-    .map((trade) => {
-      const fees = tradeFees(trade);
+    .map((row) => {
+      const actionButtons =
+        row.kind === "trade"
+          ? `
+              <button class="icon-action" data-edit="${row.id}">编辑</button>
+              <button class="icon-action" data-delete="${row.id}">删除</button>
+            `
+          : `<button class="icon-action" data-delete-action="${row.id}">删除</button>`;
       return `
         <tr>
-          <td>${trade.date}</td>
-          <td>${trade.symbol}</td>
-          <td>${trade.name}</td>
-          <td><span class="tag ${trade.side}">${trade.side === "buy" ? "买入" : "卖出"}</span></td>
-          <td>${number(trade.price, 3)}</td>
-          <td>${trade.quantity}</td>
-          <td>${money(tradeAmount(trade))}</td>
-          <td>${money(fees.commission)}</td>
-          <td>${money(fees.stampTax)}</td>
-          <td>${money(fees.transferFee)}</td>
-          <td class="${classByValue(pnlByTrade.get(trade.id) || 0)}">${trade.side === "sell" ? money(pnlByTrade.get(trade.id) || 0) : "-"}</td>
-          <td>${trade.note || "-"}</td>
+          <td>${row.date || "-"}</td>
+          <td>${row.symbol}</td>
+          <td>${row.name}</td>
+          <td><span class="tag ${row.tone}">${row.type}</span></td>
+          <td>${row.price}</td>
+          <td>${row.quantity}</td>
+          <td>${row.amount}</td>
+          <td>${row.commission}</td>
+          <td>${row.stampTax}</td>
+          <td>${row.transferFee}</td>
+          <td class="${classByValue(row.pnl || 0)}">${row.pnl === null ? "-" : money(row.pnl)}</td>
+          <td>${row.note || "-"}</td>
           <td>
             <div class="row-actions">
-              <button class="icon-action" data-edit="${trade.id}">编辑</button>
-              <button class="icon-action" data-delete="${trade.id}">删除</button>
+              ${actionButtons}
             </div>
           </td>
         </tr>
@@ -2379,28 +2695,32 @@ function renderRecords() {
     .join("");
 
   els.recordsCards.innerHTML = records
-    .map((trade) => {
-      const fees = tradeFees(trade);
-      const pnl = pnlByTrade.get(trade.id) || 0;
+    .map((row) => {
+      const actionButtons =
+        row.kind === "trade"
+          ? `
+              <button class="icon-action" data-edit="${row.id}">编辑</button>
+              <button class="icon-action" data-delete="${row.id}">删除</button>
+            `
+          : `<button class="icon-action" data-delete-action="${row.id}">删除</button>`;
       return `
         <article class="mobile-card">
           <div class="mobile-card-head">
-            <strong>${trade.name}</strong>
-            <span class="tag ${trade.side}">${trade.side === "buy" ? "买入" : "卖出"}</span>
+            <strong>${row.name}</strong>
+            <span class="tag ${row.tone}">${row.type}</span>
           </div>
           <dl>
-            <div><dt>日期</dt><dd>${trade.date}</dd></div>
-            <div><dt>代码</dt><dd>${trade.symbol}</dd></div>
-            <div><dt>价格</dt><dd>${number(trade.price, 3)}</dd></div>
-            <div><dt>数量</dt><dd>${trade.quantity}</dd></div>
-            <div><dt>金额</dt><dd>${money(tradeAmount(trade))}</dd></div>
-            <div><dt>费用</dt><dd>${money(fees.commission + fees.stampTax + fees.transferFee)}</dd></div>
-            <div><dt>匹配盈亏</dt><dd class="${classByValue(pnl)}">${trade.side === "sell" ? money(pnl) : "-"}</dd></div>
+            <div><dt>日期</dt><dd>${row.date || "-"}</dd></div>
+            <div><dt>代码</dt><dd>${row.symbol}</dd></div>
+            <div><dt>价格</dt><dd>${row.price}</dd></div>
+            <div><dt>数量</dt><dd>${row.quantity}</dd></div>
+            <div><dt>金额</dt><dd>${row.amount}</dd></div>
+            <div><dt>费用</dt><dd>${row.fee ? money(row.fee) : "-"}</dd></div>
+            <div><dt>匹配盈亏</dt><dd class="${classByValue(row.pnl || 0)}">${row.pnl === null ? "-" : money(row.pnl)}</dd></div>
           </dl>
-          <p>${trade.note || "无备注"}</p>
+          <p>${row.note || "无备注"}</p>
           <div class="row-actions">
-            <button class="icon-action" data-edit="${trade.id}">编辑</button>
-            <button class="icon-action" data-delete="${trade.id}">删除</button>
+            ${actionButtons}
           </div>
         </article>
       `;
@@ -2410,57 +2730,144 @@ function renderRecords() {
 
 function renderPositions() {
   const { positions } = calculatePortfolio();
-  const active = positions.filter((position) => position.quantity > 0 || position.realized !== 0);
+  const matchedBySymbol = new Map(calculateTradePairPnL().map((row) => [row.symbol, row.pnl]));
+  const current = positions.filter((position) => position.quantity > 0);
+  const currentSymbols = new Set(current.map((position) => position.symbol));
+  const names = stockNameMap();
+  const closed = [...allKnownSymbols()]
+    .filter((symbol) => !currentSymbols.has(symbol) && stockEvents(symbol).length > 0)
+    .map((symbol) => {
+      const position = positions.find((item) => item.symbol === symbol) || {
+        symbol,
+        name: names.get(symbol) || symbol,
+        floating: 0,
+        realized: 0,
+      };
+      const realized = Number(position.realized) || 0;
+      const dividends = stockDividendTotal(symbol);
+      const fees = stockFeeTotal(symbol);
+      const closeDate = latestStockSellDate(symbol) || (stockEvents(symbol)[0] ? stockEvents(symbol)[0].date : "");
+      return {
+        symbol,
+        name: position.name || names.get(symbol) || symbol,
+        realized,
+        dividends,
+        fees,
+        totalPnl: realized + dividends,
+        closeDate,
+        days: holdingDays(firstStockDate(symbol), closeDate),
+      };
+    })
+    .filter((row) => row.realized !== 0 || row.dividends !== 0 || state.trades.some((trade) => normalizeSymbol(trade.symbol) === row.symbol));
 
-  if (!active.length) {
-    els.positionsBody.innerHTML = `<tr><td colspan="11" class="empty-state">暂无持仓，先录入初始持仓或买入交易</td></tr>`;
-    els.positionsCards.innerHTML = `<div class="empty-state">暂无持仓，先录入初始持仓或买入交易</div>`;
+  if (!current.length) {
+    els.positionsBody.innerHTML = `<tr><td colspan="13" class="empty-state">暂无当前持仓</td></tr>`;
+    els.positionsCards.innerHTML = `<div class="empty-state">暂无当前持仓</div>`;
+  } else {
+    const sorted = current.sort((a, b) => b.marketValue - a.marketValue);
+
+    els.positionsBody.innerHTML = sorted
+      .map((position) => {
+        const realized = matchedBySymbol.get(position.symbol) || 0;
+        const totalPnl = position.floating + realized;
+        return `
+          <tr>
+            <td>${position.symbol}</td>
+            <td>${position.name}</td>
+            <td>${number(position.quantity, 0)}</td>
+            <td>${money(position.initialAverageCost)}</td>
+            <td>${money(position.averageCost)}</td>
+            <td><input class="current-price-input" type="number" min="0" step="0.001" value="${position.currentPrice}" data-price-symbol="${position.symbol}" /></td>
+            <td>${money(position.marketValue)}</td>
+            <td class="${classByValue(position.dayPnl)}">${money(position.dayPnl)}</td>
+            <td class="${classByValue(position.floating)}">${money(position.floating)}</td>
+            <td class="${classByValue(position.floating)}">${position.cost > 0 ? `${number((position.floating / position.cost) * 100, 2)}%` : "-"}</td>
+            <td class="${classByValue(realized)}">${money(realized)}</td>
+            <td class="${classByValue(totalPnl)}">${money(totalPnl)}</td>
+            <td><button class="icon-action" data-detail-symbol="${position.symbol}">详情</button></td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    els.positionsCards.innerHTML = sorted
+      .map((position) => {
+        const realized = matchedBySymbol.get(position.symbol) || 0;
+        const totalPnl = position.floating + realized;
+        return `
+          <article class="mobile-card">
+            <div class="mobile-card-head">
+              <strong>${position.name}</strong>
+              <span>${position.symbol}</span>
+            </div>
+            <dl>
+              <div><dt>数量</dt><dd>${number(position.quantity, 0)}</dd></div>
+              <div><dt>原始成本</dt><dd>${money(position.initialAverageCost)}</dd></div>
+              <div><dt>现在成本</dt><dd>${money(position.averageCost)}</dd></div>
+              <div><dt>市值</dt><dd>${money(position.marketValue)}</dd></div>
+              <div><dt>当日盈亏</dt><dd class="${classByValue(position.dayPnl)}">${money(position.dayPnl)}</dd></div>
+              <div><dt>浮动盈亏</dt><dd class="${classByValue(position.floating)}">${money(position.floating)}</dd></div>
+              <div><dt>实现盈亏</dt><dd class="${classByValue(realized)}">${money(realized)}</dd></div>
+              <div><dt>总盈亏</dt><dd class="${classByValue(totalPnl)}">${money(totalPnl)}</dd></div>
+              <div><dt>收益率</dt><dd class="${classByValue(position.floating)}">${position.cost > 0 ? `${number((position.floating / position.cost) * 100, 2)}%` : "-"}</dd></div>
+            </dl>
+            <label class="mobile-price">
+              当前价
+              <input class="current-price-input" type="number" min="0" step="0.001" value="${position.currentPrice}" data-price-symbol="${position.symbol}" />
+            </label>
+            <div class="row-actions">
+              <button class="icon-action" data-detail-symbol="${position.symbol}">详情</button>
+            </div>
+          </article>
+        `;
+      })
+      .join("");
+  }
+
+  if (!closed.length) {
+    els.closedPositionsBody.innerHTML = `<tr><td colspan="9" class="empty-state">暂无已清仓股票</td></tr>`;
+    els.closedPositionsCards.innerHTML = `<div class="empty-state">暂无已清仓股票</div>`;
     return;
   }
 
-  const sorted = active.sort((a, b) => b.marketValue - a.marketValue);
-
-  els.positionsBody.innerHTML = sorted
+  const closedRows = closed.sort((a, b) => (b.closeDate || "").localeCompare(a.closeDate || ""));
+  els.closedPositionsBody.innerHTML = closedRows
     .map(
-      (position) => `
+      (row) => `
         <tr>
-          <td>${position.symbol}</td>
-          <td>${position.name}</td>
-          <td>${number(position.quantity, 0)}</td>
-          <td>${money(position.averageCost)}</td>
-          <td>${money(position.averageCost)}</td>
-          <td><input class="current-price-input" type="number" min="0" step="0.001" value="${position.currentPrice}" data-price-symbol="${position.symbol}" /></td>
-          <td>${money(position.marketValue)}</td>
-          <td class="${classByValue(position.dayPnl)}">${money(position.dayPnl)}</td>
-          <td class="${classByValue(position.floating)}">${money(position.floating)}</td>
-          <td class="${classByValue(position.floating)}">${position.cost > 0 ? `${number((position.floating / position.cost) * 100, 2)}%` : "-"}</td>
-          <td class="${classByValue(position.realized)}">${money(position.realized)}</td>
+          <td>${row.symbol}</td>
+          <td>${row.name}</td>
+          <td>${row.closeDate || "-"}</td>
+          <td>${row.days}</td>
+          <td class="${classByValue(row.realized)}">${money(row.realized)}</td>
+          <td>${money(row.dividends)}</td>
+          <td>${money(row.fees)}</td>
+          <td class="${classByValue(row.totalPnl)}">${money(row.totalPnl)}</td>
+          <td><button class="icon-action" data-detail-symbol="${row.symbol}">详情</button></td>
         </tr>
       `,
     )
     .join("");
 
-  els.positionsCards.innerHTML = sorted
+  els.closedPositionsCards.innerHTML = closedRows
     .map(
-      (position) => `
+      (row) => `
         <article class="mobile-card">
           <div class="mobile-card-head">
-            <strong>${position.name}</strong>
-            <span>${position.symbol}</span>
+            <strong>${row.name}</strong>
+            <span>${row.symbol}</span>
           </div>
           <dl>
-            <div><dt>数量</dt><dd>${number(position.quantity, 0)}</dd></div>
-            <div><dt>平均成本</dt><dd>${money(position.averageCost)}</dd></div>
-            <div><dt>现在成本</dt><dd>${money(position.averageCost)}</dd></div>
-            <div><dt>市值</dt><dd>${money(position.marketValue)}</dd></div>
-            <div><dt>当日盈亏</dt><dd class="${classByValue(position.dayPnl)}">${money(position.dayPnl)}</dd></div>
-            <div><dt>浮动盈亏</dt><dd class="${classByValue(position.floating)}">${money(position.floating)}</dd></div>
-            <div><dt>收益率</dt><dd class="${classByValue(position.floating)}">${position.cost > 0 ? `${number((position.floating / position.cost) * 100, 2)}%` : "-"}</dd></div>
+            <div><dt>清仓日期</dt><dd>${row.closeDate || "-"}</dd></div>
+            <div><dt>持有天数</dt><dd>${row.days}</dd></div>
+            <div><dt>实现盈亏</dt><dd class="${classByValue(row.realized)}">${money(row.realized)}</dd></div>
+            <div><dt>分红</dt><dd>${money(row.dividends)}</dd></div>
+            <div><dt>总费用</dt><dd>${money(row.fees)}</dd></div>
+            <div><dt>最终盈亏</dt><dd class="${classByValue(row.totalPnl)}">${money(row.totalPnl)}</dd></div>
           </dl>
-          <label class="mobile-price">
-            当前价
-            <input class="current-price-input" type="number" min="0" step="0.001" value="${position.currentPrice}" data-price-symbol="${position.symbol}" />
-          </label>
+          <div class="row-actions">
+            <button class="icon-action" data-detail-symbol="${row.symbol}">详情</button>
+          </div>
         </article>
       `,
     )
@@ -2487,6 +2894,7 @@ function renderDashboard() {
   els.cash.textContent = money(totals.cash);
   els.marketValue.textContent = money(totals.marketValue);
   els.cost.textContent = money(initialAssets);
+  els.unrealized.textContent = money(totals.floating);
   els.floating.textContent = money(totalPnl);
   els.dayPnl.textContent = money(dayPnl);
   els.monthPnl.textContent = money(periodSummary.month);
@@ -2496,6 +2904,7 @@ function renderDashboard() {
   els.dividends.textContent = money(dividendTotal());
   els.totalReturn.className = classByValue(totalReturnRate);
   els.cash.className = classByValue(totals.cash);
+  els.unrealized.className = classByValue(totals.floating);
   els.floating.className = classByValue(totalPnl);
   els.dayPnl.className = classByValue(dayPnl);
   els.monthPnl.className = classByValue(periodSummary.month);
@@ -2508,47 +2917,70 @@ function renderDashboard() {
   renderTradePairPnL();
   renderStockTimeline();
   renderReports();
+  renderStockDetail();
 }
 
 function renderAllocation(positions) {
   const open = positions.filter((position) => position.quantity > 0 && position.marketValue > 0);
   const total = open.reduce((sum, position) => sum + position.marketValue, 0);
+  const assetTotal = portfolioTotals().assets;
+  const cash = portfolioTotals().cash;
   const colors = ["#176b87", "#c23b42", "#18805f", "#b76e00", "#5a4fcf", "#0f8b8d", "#9b5de5", "#ef476f"];
 
-  if (!open.length || total <= 0) {
+  if ((!open.length || total <= 0) && cash <= 0) {
     els.allocationPie.style.background = "#eef3f8";
     els.allocationPie.innerHTML = `<span>暂无市值</span>`;
     els.allocationList.innerHTML = `<div class="empty-state">输入持仓当前价后显示仓位饼图</div>`;
     return;
   }
 
+  const segments = [];
   let cursor = 0;
-  const segments = open
+  if (cash > 0 && assetTotal > 0) {
+    const cashPercent = (cash / assetTotal) * 100;
+    segments.push(`#7b8794 0% ${cashPercent}%`);
+    cursor = cashPercent;
+  }
+
+  open
     .sort((a, b) => b.marketValue - a.marketValue)
-    .map((position, index) => {
-      const start = cursor;
-      const percent = (position.marketValue / total) * 100;
+    .forEach((position, index) => {
+      const percent = assetTotal > 0 ? (position.marketValue / assetTotal) * 100 : 0;
+      segments.push(`${colors[index % colors.length]} ${cursor}% ${cursor + percent}%`);
       cursor += percent;
-      return `${colors[index % colors.length]} ${start}% ${cursor}%`;
     });
 
   els.allocationPie.style.background = `conic-gradient(${segments.join(", ")})`;
-  els.allocationPie.innerHTML = `<span>${money(total)}</span>`;
-  els.allocationList.innerHTML = open
+  els.allocationPie.innerHTML = `<span>${money(assetTotal)}</span>`;
+
+  const rows = [];
+  if (cash > 0) {
+    rows.push(`
+      <div class="allocation-row">
+        <span class="swatch cash"></span>
+        <strong>现金</strong>
+        <span>${number(assetTotal > 0 ? (cash / assetTotal) * 100 : 0, 1)}%</span>
+        <span>${money(cash)}</span>
+      </div>
+    `);
+  }
+
+  open
     .sort((a, b) => b.marketValue - a.marketValue)
-    .map((position, index) => {
-      const percent = (position.marketValue / total) * 100;
+    .forEach((position, index) => {
+      const percent = assetTotal > 0 ? (position.marketValue / assetTotal) * 100 : 0;
       const color = colors[index % colors.length];
-      return `
+      rows.push(`
         <div class="allocation-row">
           <span class="swatch" style="background: ${color}"></span>
           <strong>${position.name}</strong>
           <span>${number(percent, 1)}%</span>
           <span>${money(position.marketValue)}</span>
         </div>
-      `;
-    })
-    .join("");
+      `);
+    });
+
+  els.allocationList.innerHTML = rows.join("");
 }
 
 function renderEquityCurve() {
@@ -2725,42 +3157,7 @@ function renderStockTimeline() {
   const selected = symbols.includes(previous) ? previous : symbols[0];
   els.timelineSymbol.innerHTML = symbols.map((symbol) => `<option value="${symbol}">${symbol} ${names.get(symbol) || ""}</option>`).join("");
   els.timelineSymbol.value = selected;
-
-  const tradeEvents = state.trades
-    .filter((trade) => normalizeSymbol(trade.symbol) === selected)
-    .map((trade) => {
-      const fee = totalFee(trade);
-      return {
-        date: trade.date,
-        type: trade.side === "buy" ? "买入" : "卖出",
-        tone: trade.side,
-        detail: `${number(trade.quantity, 0)}股 × ¥${number(trade.price, 3)}，金额 ${money(tradeAmount(trade))}，费用 ${money(fee)}`,
-        note: trade.note,
-        order: trade.createdAt || 0,
-      };
-    });
-  const initialEvents = state.initialPositions
-    .filter((item) => normalizeSymbol(item.symbol) === selected)
-    .map((item) => ({
-      date: item.date || "开始",
-      type: "初始",
-      tone: "",
-      detail: `${number(item.quantity, 0)}股，成本 ${money(item.cost)}`,
-      note: "",
-      order: 0,
-    }));
-  const actionEvents = state.corporateActions
-    .filter((action) => normalizeSymbol(action.symbol) === selected)
-    .map((action) => ({
-      date: action.date,
-      type: action.type === "dividend" ? "分红" : "送股/转增",
-      tone: action.type === "dividend" ? "sell" : "buy",
-      detail: action.type === "dividend" ? `现金分红 ${money(action.value)}` : `增加 ${number(action.value, 0)}股`,
-      note: action.note,
-      order: 0,
-    }));
-
-  const events = [...initialEvents, ...tradeEvents, ...actionEvents].sort((a, b) => b.date.localeCompare(a.date) || b.order - a.order);
+  const events = stockEvents(selected);
 
   els.stockTimeline.innerHTML = events.length
     ? events
@@ -2778,6 +3175,100 @@ function renderStockTimeline() {
         )
         .join("")
     : `<div class="empty-state">这只股票暂无记录</div>`;
+}
+
+function renderStockDetail() {
+  const symbols = [...allKnownSymbols()].sort();
+  const names = stockNameMap();
+  if (!selectedDetailSymbol && symbols.length) selectedDetailSymbol = symbols[0];
+  const symbol = selectedDetailSymbol;
+  const position = calculatePortfolio().positions.find((item) => item.symbol === symbol) || {
+    symbol,
+    name: names.get(symbol) || symbol,
+    quantity: 0,
+    cost: 0,
+    initialAverageCost: 0,
+    averageCost: 0,
+    currentPrice: state.prices[symbol] ?? "",
+    marketValue: 0,
+    floating: 0,
+    dayPnl: 0,
+    realized: 0,
+  };
+  const pair = calculateTradePairPnL().find((row) => row.symbol === symbol) || {
+    matchedQuantity: 0,
+    unmatchedQuantity: 0,
+    unmatchedDetails: [],
+    pnl: 0,
+  };
+  const matchedRealized = pair.pnl || 0;
+  const closedRealized = Number(position.realized) || 0;
+  const realized = position.quantity > 0 ? matchedRealized : closedRealized;
+  const dividends = stockDividendTotal(symbol);
+  const totalPnl = position.floating + realized + dividends;
+  const status = position.quantity > 0 ? "当前持仓" : realized !== 0 || stockEvents(symbol).length ? "已清仓/历史" : "暂无记录";
+  const startDate = firstStockDate(symbol);
+  const lastEvent = stockEvents(symbol)[0];
+  const endDate = position.quantity > 0 ? today() : lastEvent ? lastEvent.date : today();
+  const days = holdingDays(startDate, endDate);
+  const holdStillPnl = position.floating;
+  const enhancedPnl = matchedRealized;
+  const events = stockEvents(symbol);
+
+  els.detailTitle.textContent = `${position.name || names.get(symbol) || symbol} ${symbol}`;
+  els.detailSubtitle.textContent = `${status} · 起始 ${startDate || "-"} · ${position.quantity > 0 ? "统计至今日" : `清仓/最后记录 ${endDate || "-"}`}`;
+  els.detailMetrics.innerHTML = `
+    <article class="metric"><span>状态</span><strong>${status}</strong></article>
+    <article class="metric"><span>当前数量</span><strong>${number(position.quantity, 0)}</strong></article>
+    <article class="metric"><span>当前市值</span><strong>${money(position.marketValue)}</strong></article>
+    <article class="metric"><span>原始成本</span><strong>${money(position.initialAverageCost)}</strong></article>
+    <article class="metric"><span>现在成本</span><strong>${money(position.averageCost)}</strong></article>
+    <article class="metric"><span>持有天数</span><strong>${days}</strong></article>
+    <article class="metric"><span>浮动盈亏</span><strong class="${classByValue(position.floating)}">${money(position.floating)}</strong></article>
+    <article class="metric"><span>实现盈亏</span><strong class="${classByValue(realized)}">${money(realized)}</strong></article>
+    <article class="metric"><span>低买高卖</span><strong class="${classByValue(matchedRealized)}">${money(matchedRealized)}</strong></article>
+    <article class="metric"><span>累计分红</span><strong>${money(dividends)}</strong></article>
+    <article class="metric"><span>总盈亏</span><strong class="${classByValue(totalPnl)}">${money(totalPnl)}</strong></article>
+    <article class="metric"><span>已匹配数量</span><strong>${number(pair.matchedQuantity, 0)}</strong></article>
+    <article class="metric"><span>未匹配数量</span><strong class="${classByValue(pair.unmatchedQuantity)}">${number(pair.unmatchedQuantity, 0)}</strong></article>
+    <article class="metric"><span>当日盈亏</span><strong class="${classByValue(position.dayPnl)}">${money(position.dayPnl)}</strong></article>
+  `;
+  els.detailCompare.innerHTML = `
+    <article class="compare-card">
+      <span>持股不动部分</span>
+      <strong class="${classByValue(holdStillPnl)}">${money(holdStillPnl)}</strong>
+      <small class="subtle-detail">按当前持仓市值减当前持仓成本计算。</small>
+    </article>
+    <article class="compare-card">
+      <span>低买高卖实现</span>
+      <strong class="${classByValue(enhancedPnl)}">${money(enhancedPnl)}</strong>
+      <small class="subtle-detail">按买卖匹配计算，原来持仓不参与匹配。</small>
+    </article>
+    <article class="compare-card">
+      <span>合计效果</span>
+      <strong class="${classByValue(totalPnl)}">${money(totalPnl)}</strong>
+      <small class="subtle-detail">总盈亏 = 浮动盈亏 + 实现盈亏 + 分红。</small>
+    </article>
+  `;
+  els.detailUnmatched.innerHTML = pair.unmatchedDetails && pair.unmatchedDetails.length
+    ? `<div class="mobile-card"><strong>${number(pair.unmatchedQuantity, 0)}</strong>${renderUnmatchedDetail(pair)}</div>`
+    : `<div class="empty-state">暂无未匹配买卖</div>`;
+  els.detailTimeline.innerHTML = events.length
+    ? events
+        .map(
+          (event) => `
+            <article class="timeline-item">
+              <strong>${event.date}</strong>
+              <span class="tag ${event.tone}">${event.type}</span>
+              <div>
+                <strong>${event.detail}</strong>
+                <p>${event.note || "无备注"}</p>
+              </div>
+            </article>
+          `,
+        )
+        .join("")
+    : `<div class="empty-state">暂无时间线记录</div>`;
 }
 
 function reportStockText(row) {
@@ -3216,7 +3707,7 @@ document.querySelector("#add-initial-position").addEventListener("click", addIni
 optionalElement("#reset-initial-position").addEventListener("click", resetInitialPositionForm);
 optionalElement("#add-corporate-action").addEventListener("click", addCorporateAction);
 optionalElement("#clear-initial-positions").addEventListener("click", () => {
-  if (!confirm("确定清空全部初始持仓吗？交易记录不会删除。")) return;
+  if (!confirm("确定清空全部初始持仓吗？流水记录不会删除。")) return;
   state.initialPositions = [];
   resetInitialPositionForm();
   save();
@@ -3245,18 +3736,31 @@ els.recordFilter.addEventListener("input", renderRecords);
 els.pairStartDate.addEventListener("change", renderTradePairPnL);
 els.pairEndDate.addEventListener("change", renderTradePairPnL);
 els.timelineSymbol.addEventListener("change", renderStockTimeline);
+els.openTimelineDetail.addEventListener("click", () => openStockDetail(els.timelineSymbol.value || selectedDetailSymbol));
 els.recordsBody.addEventListener("click", (event) => {
   const editId = event.target.dataset.edit;
   const deleteId = event.target.dataset.delete;
+  const deleteActionId = event.target.dataset.deleteAction;
   if (editId) editTrade(editId);
   if (deleteId) deleteTrade(deleteId);
+  if (deleteActionId) {
+    state.corporateActions = state.corporateActions.filter((action) => action.id !== deleteActionId);
+    save();
+    renderAll();
+  }
 });
 
 els.recordsCards.addEventListener("click", (event) => {
   const editId = event.target.dataset.edit;
   const deleteId = event.target.dataset.delete;
+  const deleteActionId = event.target.dataset.deleteAction;
   if (editId) editTrade(editId);
   if (deleteId) deleteTrade(deleteId);
+  if (deleteActionId) {
+    state.corporateActions = state.corporateActions.filter((action) => action.id !== deleteActionId);
+    save();
+    renderAll();
+  }
 });
 
 els.positionsBody.addEventListener("input", (event) => {
@@ -3273,6 +3777,26 @@ els.positionsCards.addEventListener("input", (event) => {
   state.prices[symbol] = event.target.value;
   save();
   renderDashboard();
+});
+
+els.positionsBody.addEventListener("click", (event) => {
+  const symbol = event.target.dataset.detailSymbol;
+  if (symbol) openStockDetail(symbol);
+});
+
+els.positionsCards.addEventListener("click", (event) => {
+  const symbol = event.target.dataset.detailSymbol;
+  if (symbol) openStockDetail(symbol);
+});
+
+els.closedPositionsBody.addEventListener("click", (event) => {
+  const symbol = event.target.dataset.detailSymbol;
+  if (symbol) openStockDetail(symbol);
+});
+
+els.closedPositionsCards.addEventListener("click", (event) => {
+  const symbol = event.target.dataset.detailSymbol;
+  if (symbol) openStockDetail(symbol);
 });
 
 els.positionsBody.addEventListener("change", (event) => {
