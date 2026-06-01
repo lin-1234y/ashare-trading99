@@ -547,6 +547,17 @@ button {
   overflow-wrap: anywhere;
 }
 
+.pnl-day small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.stock-report-day {
+  min-height: 106px;
+}
+
 .subtle-detail {
   display: block;
   margin-top: 4px;
@@ -1258,10 +1269,6 @@ td {
               <strong id="metric-cost">¥0.00</strong>
             </article>
             <article class="metric">
-              <span>浮动盈亏</span>
-              <strong id="metric-unrealized">¥0.00</strong>
-            </article>
-            <article class="metric">
               <span>总盈亏</span>
               <strong id="metric-floating">¥0.00</strong>
             </article>
@@ -1276,10 +1283,6 @@ td {
             <article class="metric">
               <span>本年盈亏</span>
               <strong id="metric-year-pnl">¥0.00</strong>
-            </article>
-            <article class="metric">
-              <span>资产实现盈亏</span>
-              <strong id="metric-realized">¥0.00</strong>
             </article>
             <article class="metric">
               <span>匹配实现盈亏</span>
@@ -1429,9 +1432,8 @@ td {
                 <thead>
                   <tr>
                     <th>股票</th>
-                    <th>周期总盈亏</th>
+                    <th>总盈亏</th>
                     <th>匹配实现</th>
-                    <th>浮动盈亏</th>
                     <th>分红</th>
                     <th>手续费</th>
                     <th>交易</th>
@@ -1469,52 +1471,42 @@ td {
             <div class="timeline-list" id="stock-timeline"></div>
           </section>
 
-          <section class="spacing-top report-grid">
-            <section class="panel">
-              <div class="panel-header">
-                <h3>月度报表</h3>
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <div>
+                <h3>个股盈亏日历</h3>
+                <span>按个股记录每日盈亏、匹配实现盈亏和成交额</span>
               </div>
-              <div class="table-wrap compact-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>月份</th>
-                      <th>盈亏</th>
-                      <th>交易次数</th>
-                      <th>胜率</th>
-                      <th>总费用</th>
-                      <th>最大盈利</th>
-                      <th>最大亏损</th>
-                    </tr>
-                  </thead>
-                  <tbody id="monthly-report-body"></tbody>
-                </table>
+              <div class="date-filter">
+                <label>
+                  股票
+                  <select id="report-symbol"></select>
+                </label>
+                <label>
+                  月份
+                  <input type="month" id="report-month" />
+                </label>
               </div>
-              <div class="mobile-list" id="monthly-report-cards"></div>
-            </section>
-
-            <section class="panel">
-              <div class="panel-header">
-                <h3>年度报表</h3>
-              </div>
-              <div class="table-wrap compact-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>年份</th>
-                      <th>盈亏</th>
-                      <th>交易次数</th>
-                      <th>胜率</th>
-                      <th>总费用</th>
-                      <th>最大盈利</th>
-                      <th>最大亏损</th>
-                    </tr>
-                  </thead>
-                  <tbody id="yearly-report-body"></tbody>
-                </table>
-              </div>
-              <div class="mobile-list" id="yearly-report-cards"></div>
-            </section>
+            </div>
+            <div class="metric-grid six" id="report-summary-metrics"></div>
+            <div class="equity-chart" id="report-calendar"></div>
+            <div class="table-wrap compact-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>当日盈亏</th>
+                    <th>匹配实现</th>
+                    <th>成交额</th>
+                    <th>买入</th>
+                    <th>卖出</th>
+                    <th>手续费</th>
+                  </tr>
+                </thead>
+                <tbody id="report-daily-body"></tbody>
+              </table>
+            </div>
+            <div class="mobile-list" id="report-daily-cards"></div>
           </section>
         </section>
 
@@ -1605,9 +1597,7 @@ td {
                     <th>当前价</th>
                     <th>市值</th>
                     <th>当日盈亏</th>
-                    <th>浮动盈亏</th>
                     <th>收益率</th>
-                    <th>资产实现</th>
                     <th>匹配实现</th>
                     <th>总盈亏</th>
                     <th>详情</th>
@@ -1667,7 +1657,7 @@ td {
             <div class="panel-header">
               <div>
                 <h3>持股不动 vs 低买高卖</h3>
-                <span>浮动盈亏代表持股不动部分；实现盈亏代表低买高卖已经落袋的部分</span>
+                <span>低买高卖按匹配规则统计，原始持仓不参与匹配</span>
               </div>
             </div>
             <div class="compare-grid" id="detail-compare"></div>
@@ -2009,7 +1999,7 @@ const els = {
   dayPnl: optionalElement("#metric-day-pnl"),
   monthPnl: optionalElement("#metric-month-pnl"),
   yearPnl: optionalElement("#metric-year-pnl"),
-  realized: document.querySelector("#metric-realized"),
+  realized: optionalElement("#metric-realized"),
   matchedRealized: optionalElement("#metric-matched-realized"),
   totalFees: optionalElement("#metric-total-fees"),
   dividends: optionalElement("#metric-dividends"),
@@ -2019,10 +2009,12 @@ const els = {
   pairEndDate: optionalElement("#pair-end-date"),
   timelineSymbol: optionalElement("#timeline-symbol"),
   stockTimeline: optionalElement("#stock-timeline"),
-  monthlyReportBody: optionalElement("#monthly-report-body"),
-  monthlyReportCards: optionalElement("#monthly-report-cards"),
-  yearlyReportBody: optionalElement("#yearly-report-body"),
-  yearlyReportCards: optionalElement("#yearly-report-cards"),
+  reportSymbol: optionalElement("#report-symbol"),
+  reportMonth: optionalElement("#report-month"),
+  reportSummaryMetrics: optionalElement("#report-summary-metrics"),
+  reportCalendar: optionalElement("#report-calendar"),
+  reportDailyBody: optionalElement("#report-daily-body"),
+  reportDailyCards: optionalElement("#report-daily-cards"),
   summaryKindButtons: document.querySelectorAll("[data-summary-kind]"),
   summaryPeriod: optionalElement("#summary-period"),
   summaryOverallMetrics: optionalElement("#summary-overall-metrics"),
@@ -2758,12 +2750,10 @@ function calculatePeriodStockRows(kind, key) {
       const startFloating = startPositions.get(keySymbol)?.floating || 0;
       const endFloating = endPositions.get(keySymbol)?.floating || 0;
       const floating = endFloating - startFloating;
-      const startTotalPnl = startPositions.get(keySymbol)?.totalPnl || 0;
-      const endTotalPnl = endPositions.get(keySymbol)?.totalPnl || 0;
-      const current = currentPositions.get(keySymbol) || { quantity: 0, marketValue: 0, name: names.get(keySymbol) || keySymbol };
+      const current = currentPositions.get(keySymbol) || { quantity: 0, marketValue: 0, totalPnl: 0, name: names.get(keySymbol) || keySymbol };
       const tradeCount = trades.length;
       const winRate = matches.length ? (matches.filter((match) => match.pnl > 0).length / matches.length) * 100 : 0;
-      const totalPnl = endTotalPnl - startTotalPnl + dividends;
+      const totalPnl = Number(current.totalPnl) || 0;
       const hasActivity = tradeCount || actions.length || matches.length || current.quantity > 0 || Math.abs(totalPnl) > 0.000001;
       return {
         symbol: keySymbol,
@@ -2810,32 +2800,70 @@ function periodEndDate(key) {
   return `${key}-${String(new Date(year, month, 0).getDate()).padStart(2, "0")}`;
 }
 
-function buildPeriodReports(kind) {
-  const rows = calculatePnlCalendarRows().filter((row) => /^\d{4}-\d{2}-\d{2}$/.test(row.date));
-  const keys = [...new Set(state.trades.map((trade) => (kind === "month" ? trade.date.slice(0, 7) : trade.date.slice(0, 4))).filter(Boolean))]
-    .sort((a, b) => b.localeCompare(a));
+function stockReportDates(symbol) {
+  const key = normalizeSymbol(symbol);
+  const current = calculatePortfolio().positions.find((position) => position.symbol === key);
+  const matchDates = rangeMatchDetails("", "", key).map((match) => (match.buyDate > match.sellDate ? match.buyDate : match.sellDate));
+  return [
+    ...new Set([
+      ...state.trades.filter((trade) => normalizeSymbol(trade.symbol) === key).map((trade) => trade.date),
+      ...state.corporateActions.filter((action) => normalizeSymbol(action.symbol) === key).map((action) => action.date),
+      ...matchDates,
+      ...(current && current.quantity > 0 ? [today()] : []),
+    ]),
+  ]
+    .filter(validDateString)
+    .sort((a, b) => a.localeCompare(b));
+}
 
-  return keys.map((key) => {
-    const startDate = kind === "month" ? `${key}-01` : `${key}-01-01`;
-    const endDate = periodEndDate(key);
-    const periodRows = rows.filter((row) => row.date >= startDate && row.date <= endDate);
-    const trades = state.trades.filter((trade) => trade.date >= startDate && trade.date <= endDate);
-    const matchedRows = calculateTradePairPnL(startDate, endDate).filter((row) => row.matchedQuantity > 0);
-    const winRows = matchedRows.filter((row) => row.pnl > 0);
-    const best = matchedRows.length ? [...matchedRows].sort((a, b) => b.pnl - a.pnl)[0] : null;
-    const worst = matchedRows.length ? [...matchedRows].sort((a, b) => a.pnl - b.pnl)[0] : null;
+function stockDayReport(symbol, date) {
+  const key = normalizeSymbol(symbol);
+  const trades = state.trades.filter((trade) => normalizeSymbol(trade.symbol) === key && trade.date === date);
+  const actions = state.corporateActions.filter((action) => normalizeSymbol(action.symbol) === key && action.date === date);
+  const throughTrades = state.trades.filter((trade) => trade.date <= date);
+  const position = calculatePortfolio(throughTrades).positions.find((item) => item.symbol === key);
+  const dividends = actions.filter((action) => action.type === "dividend").reduce((sum, action) => sum + (Number(action.value) || 0), 0);
+  const matched = rangeMatchDetails(date, date, key).reduce((sum, match) => sum + match.pnl, 0);
+  const buyAmount = trades.filter((trade) => trade.side === "buy").reduce((sum, trade) => sum + tradeAmount(trade), 0);
+  const sellAmount = trades.filter((trade) => trade.side === "sell").reduce((sum, trade) => sum + tradeAmount(trade), 0);
+  const fees = trades.reduce((sum, trade) => sum + totalFee(trade), 0);
+  const totalPnl = position ? Number(position.dayPnl) || 0 : 0;
 
-    return {
-      key,
-      pnl: periodRows.reduce((sum, row) => sum + row.periodPnl, 0),
-      tradeCount: trades.length,
-      matchedCount: matchedRows.length,
-      winRate: matchedRows.length ? (winRows.length / matchedRows.length) * 100 : 0,
-      fees: trades.reduce((sum, trade) => sum + totalFee(trade), 0),
-      best,
-      worst,
-    };
-  });
+  return {
+    date,
+    totalPnl,
+    matched,
+    turnover: buyAmount + sellAmount,
+    buyAmount,
+    sellAmount,
+    fees,
+    tradeCount: trades.length,
+    dividends,
+  };
+}
+
+function stockReportRows(symbol, startDate, endDate) {
+  return stockReportDates(symbol)
+    .filter((date) => dateInRange(date, startDate, endDate))
+    .map((date) => stockDayReport(symbol, date))
+    .filter((row) => row.tradeCount || row.dividends || Math.abs(row.totalPnl) > 0.000001 || Math.abs(row.matched) > 0.000001);
+}
+
+function sumStockReportRows(rows) {
+  return rows.reduce(
+    (acc, row) => {
+      acc.totalPnl += row.totalPnl;
+      acc.matched += row.matched;
+      acc.turnover += row.turnover;
+      acc.buyAmount += row.buyAmount;
+      acc.sellAmount += row.sellAmount;
+      acc.fees += row.fees;
+      acc.tradeCount += row.tradeCount;
+      acc.dividends += row.dividends;
+      return acc;
+    },
+    { totalPnl: 0, matched: 0, turnover: 0, buyAmount: 0, sellAmount: 0, fees: 0, tradeCount: 0, dividends: 0 },
+  );
 }
 
 function jsonp(url, callbackName) {
@@ -3419,9 +3447,7 @@ function renderPositions() {
             <td><input class="current-price-input" type="number" min="0" step="0.001" value="${position.currentPrice}" data-price-symbol="${position.symbol}" /></td>
             <td>${money(position.marketValue)}</td>
             <td class="${classByValue(position.dayPnl)}">${money(position.dayPnl)}</td>
-            <td class="${classByValue(position.floating)}">${money(position.floating)}</td>
             <td class="${classByValue(returnRate)}">${investedCost > 0 ? `${number(returnRate, 2)}%` : "-"}</td>
-            <td class="${classByValue(position.assetRealized)}">${money(position.assetRealized)}</td>
             <td class="${classByValue(matchedRealized)}">${money(matchedRealized)}</td>
             <td class="${classByValue(position.totalPnl)}">${money(position.totalPnl)}</td>
             <td><button class="icon-action" data-detail-symbol="${position.symbol}">详情</button></td>
@@ -3447,8 +3473,6 @@ function renderPositions() {
               <div><dt>现在成本</dt><dd>${money(position.averageCost)}</dd></div>
               <div><dt>市值</dt><dd>${money(position.marketValue)}</dd></div>
               <div><dt>当日盈亏</dt><dd class="${classByValue(position.dayPnl)}">${money(position.dayPnl)}</dd></div>
-              <div><dt>浮动盈亏</dt><dd class="${classByValue(position.floating)}">${money(position.floating)}</dd></div>
-              <div><dt>资产实现</dt><dd class="${classByValue(position.assetRealized)}">${money(position.assetRealized)}</dd></div>
               <div><dt>匹配实现</dt><dd class="${classByValue(matchedRealized)}">${money(matchedRealized)}</dd></div>
               <div><dt>总盈亏</dt><dd class="${classByValue(position.totalPnl)}">${money(position.totalPnl)}</dd></div>
               <div><dt>收益率</dt><dd class="${classByValue(returnRate)}">${investedCost > 0 ? `${number(returnRate, 2)}%` : "-"}</dd></div>
@@ -3537,23 +3561,23 @@ function renderDashboard() {
   els.cash.textContent = money(totals.cash);
   els.marketValue.textContent = money(totals.marketValue);
   els.cost.textContent = money(initialAssets);
-  els.unrealized.textContent = money(totals.floating);
+  if (els.unrealized) els.unrealized.textContent = money(totals.floating);
   els.floating.textContent = money(totalPnl);
   els.dayPnl.textContent = money(dayPnl);
   els.monthPnl.textContent = money(periodSummary.month);
   els.yearPnl.textContent = money(periodSummary.year);
-  els.realized.textContent = money(assetRealizedPnl);
+  if (els.realized) els.realized.textContent = money(assetRealizedPnl);
   els.matchedRealized.textContent = money(matchedRealized);
   els.totalFees.textContent = money(totalFees);
   els.dividends.textContent = money(dividendTotal());
   els.totalReturn.className = classByValue(totalReturnRate);
   els.cash.className = classByValue(totals.cash);
-  els.unrealized.className = classByValue(totals.floating);
+  if (els.unrealized) els.unrealized.className = classByValue(totals.floating);
   els.floating.className = classByValue(totalPnl);
   els.dayPnl.className = classByValue(dayPnl);
   els.monthPnl.className = classByValue(periodSummary.month);
   els.yearPnl.className = classByValue(periodSummary.year);
-  els.realized.className = classByValue(assetRealizedPnl);
+  if (els.realized) els.realized.className = classByValue(assetRealizedPnl);
   els.matchedRealized.className = classByValue(matchedRealized);
   els.summaryCount.textContent = `${state.trades.length} 笔交易`;
   const backupAge = daysSince(state.settings.lastBackupAt);
@@ -3712,7 +3736,7 @@ function renderRangeSummary() {
   const summary = calculateRangeSummary(els.rangeStartDate.value, els.rangeEndDate.value);
   const cards = [
     { label: "区间总盈亏", value: money(summary.totalPnl), tone: classByValue(summary.totalPnl) },
-    { label: "交易/浮动盈亏", value: money(summary.pnl), tone: classByValue(summary.pnl) },
+    { label: "阶段盈亏", value: money(summary.pnl), tone: classByValue(summary.pnl) },
     { label: "匹配实现", value: money(summary.matched), tone: classByValue(summary.matched) },
     { label: "交易次数", value: `${summary.tradeCount} 笔`, tone: "" },
     { label: "买入金额", value: money(summary.buyAmount), tone: "" },
@@ -3887,8 +3911,8 @@ function renderStockDetail() {
   const lastEvent = stockEvents(symbol)[0];
   const endDate = position.quantity > 0 ? today() : lastEvent ? lastEvent.date : today();
   const days = holdingDays(startDate, endDate);
-  const holdStillPnl = position.floating;
   const enhancedPnl = matchedRealized;
+  const holdStillPnl = totalPnl - matchedRealized;
   const events = stockEvents(symbol);
 
   els.detailTitle.textContent = `${position.name || names.get(symbol) || symbol} ${symbol}`;
@@ -3900,9 +3924,8 @@ function renderStockDetail() {
     <article class="metric"><span>原始成本</span><strong>${money(position.initialAverageCost)}</strong></article>
     <article class="metric"><span>现在成本</span><strong>${money(position.averageCost)}</strong></article>
     <article class="metric"><span>持有天数</span><strong>${days}</strong></article>
-    <article class="metric"><span>浮动盈亏</span><strong class="${classByValue(position.floating)}">${money(position.floating)}</strong></article>
-    <article class="metric"><span>资产实现</span><strong class="${classByValue(assetRealized)}">${money(assetRealized)}</strong></article>
     <article class="metric"><span>低买高卖</span><strong class="${classByValue(matchedRealized)}">${money(matchedRealized)}</strong></article>
+    <article class="metric"><span>手续费</span><strong>${money(position.totalFees || 0)}</strong></article>
     <article class="metric"><span>累计分红</span><strong>${money(dividends)}</strong></article>
     <article class="metric"><span>总盈亏</span><strong class="${classByValue(totalPnl)}">${money(totalPnl)}</strong></article>
     <article class="metric"><span>总收益率</span><strong class="${classByValue(totalReturnRate)}">${number(totalReturnRate, 2)}%</strong></article>
@@ -3912,14 +3935,14 @@ function renderStockDetail() {
   `;
   els.detailCompare.innerHTML = `
     <article class="compare-card">
-      <span>持股不动部分</span>
-      <strong class="${classByValue(holdStillPnl)}">${money(holdStillPnl)}</strong>
-      <small class="subtle-detail">按当前持仓市值减当前持仓成本计算。</small>
-    </article>
-    <article class="compare-card">
       <span>低买高卖实现</span>
       <strong class="${classByValue(enhancedPnl)}">${money(enhancedPnl)}</strong>
       <small class="subtle-detail">按买卖匹配计算，原来持仓不参与匹配。</small>
+    </article>
+    <article class="compare-card">
+      <span>持股不动</span>
+      <strong class="${classByValue(holdStillPnl)}">${money(holdStillPnl)}</strong>
+      <small class="subtle-detail">按总盈亏 - 匹配实现盈亏计算。</small>
     </article>
     <article class="compare-card">
       <span>合计效果</span>
@@ -3964,58 +3987,133 @@ function renderStockDetail() {
     : `<div class="empty-state">暂无时间线记录</div>`;
 }
 
-function reportStockText(row) {
-  if (!row) return "-";
-  return `${row.name} ${money(row.pnl)}`;
-}
-
-function renderReportTable(rows, bodyEl, cardsEl, emptyText) {
-  if (!rows.length) {
-    bodyEl.innerHTML = `<tr><td colspan="7" class="empty-state">${emptyText}</td></tr>`;
-    cardsEl.innerHTML = `<div class="empty-state">${emptyText}</div>`;
+function renderReports() {
+  const symbols = [...allKnownSymbols()].sort();
+  const names = stockNameMap();
+  if (!symbols.length) {
+    els.reportSymbol.innerHTML = `<option value="">暂无股票</option>`;
+    els.reportSummaryMetrics.innerHTML = `<div class="empty-state">录入交易后显示个股复盘日历</div>`;
+    els.reportCalendar.innerHTML = "";
+    els.reportDailyBody.innerHTML = `<tr><td colspan="7" class="empty-state">暂无个股记录</td></tr>`;
+    els.reportDailyCards.innerHTML = `<div class="empty-state">暂无个股记录</div>`;
     return;
   }
 
-  bodyEl.innerHTML = rows
+  const selected = symbols.includes(els.reportSymbol.value) ? els.reportSymbol.value : symbols[0];
+  if (!els.reportMonth.value) els.reportMonth.value = currentMonthKey();
+  els.reportSymbol.innerHTML = symbols.map((symbol) => `<option value="${symbol}">${names.get(symbol) || symbol} ${symbol}</option>`).join("");
+  els.reportSymbol.value = selected;
+
+  const monthKey = els.reportMonth.value || currentMonthKey();
+  const yearKey = monthKey.slice(0, 4);
+  const monthRows = stockReportRows(selected, monthStartDate(monthKey), monthEndDate(monthKey));
+  const yearRows = stockReportRows(selected, `${yearKey}-01-01`, `${yearKey}-12-31`);
+  const monthSummary = sumStockReportRows(monthRows);
+  const yearSummary = sumStockReportRows(yearRows);
+  const assets = portfolioTotals().assets;
+  const monthMatchRate = assets > 0 ? (monthSummary.matched / assets) * 100 : 0;
+  const yearMatchRate = assets > 0 ? (yearSummary.matched / assets) * 100 : 0;
+  const cards = [
+    { label: "本月当日盈亏合计", value: money(monthSummary.totalPnl), tone: classByValue(monthSummary.totalPnl) },
+    { label: "本月匹配实现", value: money(monthSummary.matched), tone: classByValue(monthSummary.matched) },
+    { label: "本月成交额", value: money(monthSummary.turnover), tone: "" },
+    { label: "本月匹配贡献率", value: `${number(monthMatchRate, 2)}%`, tone: classByValue(monthMatchRate) },
+    { label: "本年当日盈亏合计", value: money(yearSummary.totalPnl), tone: classByValue(yearSummary.totalPnl) },
+    { label: "本年匹配实现", value: money(yearSummary.matched), tone: classByValue(yearSummary.matched) },
+    { label: "本年成交额", value: money(yearSummary.turnover), tone: "" },
+    { label: "本年匹配贡献率", value: `${number(yearMatchRate, 2)}%`, tone: classByValue(yearMatchRate) },
+  ];
+  els.reportSummaryMetrics.innerHTML = cards
+    .map(
+      (card) => `
+        <article class="metric">
+          <span>${card.label}</span>
+          <strong class="${card.tone}">${card.value}</strong>
+        </article>
+      `,
+    )
+    .join("");
+
+  renderStockReportCalendar(monthRows, monthKey);
+  renderStockReportDailyRows(monthRows);
+}
+
+function renderStockReportCalendar(rows, monthKey) {
+  const [year, month] = monthKey.split("-").map(Number);
+  const rowByDate = new Map(rows.map((row) => [row.date, row]));
+  const firstDay = new Date(year, month - 1, 1).getDay();
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const cells = [];
+
+  for (let index = 0; index < firstDay; index += 1) {
+    cells.push(`<div class="pnl-day empty" aria-hidden="true"></div>`);
+  }
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = `${monthKey}-${String(day).padStart(2, "0")}`;
+    const row = rowByDate.get(date);
+    const pnl = row ? row.totalPnl : 0;
+    const tone = pnl > 0 ? "positive-day" : pnl < 0 ? "negative-day" : "";
+    cells.push(`
+      <div class="pnl-day stock-report-day ${tone}">
+        <time>${day}</time>
+        <span class="${classByValue(pnl)}">日 ${row ? money(pnl) : "-"}</span>
+        <small>配 ${row ? money(row.matched) : "-"}</small>
+        <small>额 ${row ? money(row.turnover) : "-"}</small>
+      </div>
+    `);
+  }
+
+  els.reportCalendar.innerHTML = `
+    <div class="pnl-calendar" aria-label="个股盈亏日历">
+      ${["日", "一", "二", "三", "四", "五", "六"].map((day) => `<div class="calendar-weekday">${day}</div>`).join("")}
+      ${cells.join("")}
+    </div>
+  `;
+}
+
+function renderStockReportDailyRows(rows) {
+  if (!rows.length) {
+    els.reportDailyBody.innerHTML = `<tr><td colspan="7" class="empty-state">这个月份暂无个股交易或匹配记录</td></tr>`;
+    els.reportDailyCards.innerHTML = `<div class="empty-state">这个月份暂无个股交易或匹配记录</div>`;
+    return;
+  }
+
+  els.reportDailyBody.innerHTML = rows
     .map(
       (row) => `
         <tr>
-          <td>${row.key}</td>
-          <td class="${classByValue(row.pnl)}">${money(row.pnl)}</td>
-          <td>${row.tradeCount}</td>
-          <td>${row.matchedCount ? `${number(row.winRate, 1)}%` : "-"}</td>
+          <td>${row.date}</td>
+          <td class="${classByValue(row.totalPnl)}">${money(row.totalPnl)}</td>
+          <td class="${classByValue(row.matched)}">${money(row.matched)}</td>
+          <td>${money(row.turnover)}</td>
+          <td>${money(row.buyAmount)}</td>
+          <td>${money(row.sellAmount)}</td>
           <td>${money(row.fees)}</td>
-          <td class="${classByValue(row.best ? row.best.pnl : 0)}">${reportStockText(row.best)}</td>
-          <td class="${classByValue(row.worst ? row.worst.pnl : 0)}">${reportStockText(row.worst)}</td>
         </tr>
       `,
     )
     .join("");
 
-  cardsEl.innerHTML = rows
+  els.reportDailyCards.innerHTML = rows
     .map(
       (row) => `
         <article class="mobile-card">
           <div class="mobile-card-head">
-            <strong>${row.key}</strong>
-            <span class="${classByValue(row.pnl)}">${money(row.pnl)}</span>
+            <strong>${row.date}</strong>
+            <span class="${classByValue(row.totalPnl)}">当日 ${money(row.totalPnl)}</span>
           </div>
           <dl>
-            <div><dt>交易次数</dt><dd>${row.tradeCount}</dd></div>
-            <div><dt>胜率</dt><dd>${row.matchedCount ? `${number(row.winRate, 1)}%` : "-"}</dd></div>
-            <div><dt>总费用</dt><dd>${money(row.fees)}</dd></div>
-            <div><dt>最大盈利</dt><dd class="${classByValue(row.best ? row.best.pnl : 0)}">${reportStockText(row.best)}</dd></div>
-            <div><dt>最大亏损</dt><dd class="${classByValue(row.worst ? row.worst.pnl : 0)}">${reportStockText(row.worst)}</dd></div>
+            <div><dt>匹配实现</dt><dd class="${classByValue(row.matched)}">${money(row.matched)}</dd></div>
+            <div><dt>成交额</dt><dd>${money(row.turnover)}</dd></div>
+            <div><dt>买入</dt><dd>${money(row.buyAmount)}</dd></div>
+            <div><dt>卖出</dt><dd>${money(row.sellAmount)}</dd></div>
+            <div><dt>手续费</dt><dd>${money(row.fees)}</dd></div>
           </dl>
         </article>
       `,
     )
     .join("");
-}
-
-function renderReports() {
-  renderReportTable(buildPeriodReports("month"), els.monthlyReportBody, els.monthlyReportCards, "暂无月度报表");
-  renderReportTable(buildPeriodReports("year"), els.yearlyReportBody, els.yearlyReportCards, "暂无年度报表");
 }
 
 function renderPerformanceSummary() {
@@ -4038,7 +4136,6 @@ function renderPerformanceMetrics(overview) {
     { label: "总盈亏", value: money(overview.totalPnl), tone: classByValue(overview.totalPnl) },
     { label: "收益率", value: overview.returnRate === null ? "-" : `${number(overview.returnRate, 2)}%`, tone: classByValue(overview.returnRate || 0) },
     { label: "匹配实现", value: money(overview.matched), tone: classByValue(overview.matched) },
-    { label: "浮动盈亏", value: money(overview.floating), tone: classByValue(overview.floating) },
     { label: "分红", value: money(overview.dividends), tone: classByValue(overview.dividends) },
     { label: "手续费", value: money(overview.fees), tone: "" },
     { label: "交易次数", value: `${overview.tradeCount} 笔`, tone: "" },
@@ -4063,7 +4160,6 @@ function renderPerformanceMetrics(overview) {
 function renderOverallInsights(overview, stockRows) {
   const absParts = [
     { label: "低买高卖实现", value: overview.matched },
-    { label: "持仓浮动变化", value: overview.floating },
     { label: "现金分红", value: overview.dividends },
   ].sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
   const main = absParts[0] || { label: "暂无明显来源", value: 0 };
@@ -4089,7 +4185,7 @@ function renderOverallInsights(overview, stockRows) {
 
 function renderPerformanceStockRows(rows) {
   if (!rows.length) {
-    els.summaryStockBody.innerHTML = `<tr><td colspan="9" class="empty-state">暂无个股总结数据</td></tr>`;
+    els.summaryStockBody.innerHTML = `<tr><td colspan="8" class="empty-state">暂无个股总结数据</td></tr>`;
     els.summaryStockCards.innerHTML = `<div class="empty-state">暂无个股总结数据</div>`;
     return;
   }
@@ -4101,7 +4197,6 @@ function renderPerformanceStockRows(rows) {
           <td>${row.name}<small class="subtle-detail">${row.symbol}</small></td>
           <td class="${classByValue(row.totalPnl)}">${money(row.totalPnl)}</td>
           <td class="${classByValue(row.matched)}">${money(row.matched)}</td>
-          <td class="${classByValue(row.floating)}">${money(row.floating)}</td>
           <td>${money(row.dividends)}</td>
           <td>${money(row.fees)}</td>
           <td>${row.tradeCount}</td>
@@ -4121,9 +4216,8 @@ function renderPerformanceStockRows(rows) {
             <span>${row.symbol}</span>
           </div>
           <dl>
-            <div><dt>周期总盈亏</dt><dd class="${classByValue(row.totalPnl)}">${money(row.totalPnl)}</dd></div>
+            <div><dt>总盈亏</dt><dd class="${classByValue(row.totalPnl)}">${money(row.totalPnl)}</dd></div>
             <div><dt>匹配实现</dt><dd class="${classByValue(row.matched)}">${money(row.matched)}</dd></div>
-            <div><dt>浮动盈亏</dt><dd class="${classByValue(row.floating)}">${money(row.floating)}</dd></div>
             <div><dt>分红</dt><dd>${money(row.dividends)}</dd></div>
             <div><dt>手续费</dt><dd>${money(row.fees)}</dd></div>
             <div><dt>交易</dt><dd>${row.tradeCount}</dd></div>
@@ -4627,6 +4721,8 @@ document.querySelector("#import-data").addEventListener("change", (event) => {
 
 els.recordFilter.addEventListener("input", renderRecords);
 els.calendarMonth.addEventListener("change", renderEquityCurve);
+els.reportSymbol.addEventListener("change", renderReports);
+els.reportMonth.addEventListener("change", renderReports);
 els.rangeStartDate.addEventListener("change", renderRangeSummary);
 els.rangeEndDate.addEventListener("change", renderRangeSummary);
 els.summaryKindButtons.forEach((button) => {
