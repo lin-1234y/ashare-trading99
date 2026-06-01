@@ -1429,15 +1429,13 @@ td {
                 <thead>
                   <tr>
                     <th>股票</th>
-                    <th>资产贡献</th>
-                    <th>期初市值</th>
-                    <th>期末市值</th>
+                    <th>周期总盈亏</th>
                     <th>匹配实现</th>
-                    <th>浮动变化</th>
-                    <th>资产实现</th>
+                    <th>浮动盈亏</th>
                     <th>分红</th>
                     <th>手续费</th>
                     <th>交易</th>
+                    <th>胜率</th>
                     <th>仓位占比</th>
                   </tr>
                 </thead>
@@ -2356,8 +2354,8 @@ function buildInitialBooks() {
   return books;
 }
 
-function applyBonusActions(books, actions = state.corporateActions) {
-  const bonusActions = actions
+function applyBonusActions(books) {
+  const bonusActions = state.corporateActions
     .filter((action) => action.type === "bonus")
     .sort((a, b) => (a.date || "").localeCompare(b.date || ""));
 
@@ -2391,16 +2389,16 @@ function applyBonusActions(books, actions = state.corporateActions) {
   }
 }
 
-function dividendTotal(actions = state.corporateActions) {
-  return actions
+function dividendTotal() {
+  return state.corporateActions
     .filter((action) => action.type === "dividend")
     .reduce((sum, action) => sum + (Number(action.value) || 0), 0);
 }
 
-function applyOriginalCostAdjustments(books, actions = state.corporateActions) {
-  const sortedActions = [...actions].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+function applyOriginalCostAdjustments(books) {
+  const actions = [...state.corporateActions].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
 
-  for (const action of sortedActions) {
+  for (const action of actions) {
     const key = normalizeSymbol(action.symbol);
     const book = books.get(key);
     if (!book || book.originalQuantity <= 0) continue;
@@ -2418,10 +2416,10 @@ function applyOriginalCostAdjustments(books, actions = state.corporateActions) {
   }
 }
 
-function calculatePortfolio(trades = state.trades, actions = state.corporateActions) {
+function calculatePortfolio(trades = state.trades) {
   const books = buildInitialBooks();
-  applyBonusActions(books, actions);
-  let cash = (Number(state.settings.initialCash) || 0) + dividendTotal(actions);
+  applyBonusActions(books);
+  let cash = (Number(state.settings.initialCash) || 0) + dividendTotal();
 
   for (const trade of sortedTrades(trades)) {
     const key = normalizeSymbol(trade.symbol);
@@ -2494,8 +2492,8 @@ function calculatePortfolio(trades = state.trades, actions = state.corporateActi
     books.set(key, book);
   }
 
-  applyOriginalCostAdjustments(books, actions);
-  actions
+  applyOriginalCostAdjustments(books);
+  state.corporateActions
     .filter((action) => action.type === "dividend")
     .forEach((action) => {
       const book = books.get(normalizeSymbol(action.symbol));
@@ -2511,7 +2509,7 @@ function calculatePortfolio(trades = state.trades, actions = state.corporateActi
     const price = Number(currentPrice) || 0;
     const marketValue = quantity * price;
     const floating = marketValue - holdingCost;
-    const totalPnl = quantity > 0 ? marketValue - adjustedCost : book.realized + stockDividendTotal(book.symbol, actions);
+    const totalPnl = quantity > 0 ? marketValue - adjustedCost : book.realized + stockDividendTotal(book.symbol);
     const assetRealized = totalPnl - floating;
     const previousClose = Number(state.previousCloses[book.symbol]) || 0;
     const dayPnl = price > 0 && previousClose > 0 ? quantity * (price - previousClose) : 0;
@@ -2542,63 +2540,40 @@ function calculatePortfolio(trades = state.trades, actions = state.corporateActi
 }
 
 function uniqueTradeDates() {
-  return [...new Set([...state.trades.map((trade) => trade.date), ...state.corporateActions.map((action) => action.date)])]
+  return [...new Set(state.trades.map((trade) => trade.date))]
     .filter(Boolean)
     .sort((a, b) => a.localeCompare(b));
-}
-
-function portfolioSnapshot(trades = state.trades, actions = state.corporateActions) {
-  const snapshot = calculatePortfolio(trades, actions);
-  const marketValue = snapshot.positions.reduce((sum, item) => sum + item.marketValue, 0);
-  const cash = snapshot.cash;
-  return {
-    ...snapshot,
-    cash,
-    marketValue,
-    assets: cash + marketValue,
-  };
-}
-
-function portfolioSnapshotBefore(date) {
-  return portfolioSnapshot(
-    state.trades.filter((trade) => trade.date < date),
-    state.corporateActions.filter((action) => action.date < date),
-  );
-}
-
-function portfolioSnapshotThrough(date) {
-  return portfolioSnapshot(
-    state.trades.filter((trade) => trade.date <= date),
-    state.corporateActions.filter((action) => action.date <= date),
-  );
 }
 
 function calculateEquityCurve() {
   const dates = uniqueTradeDates();
   const initialAssets = (Number(state.settings.initialCash) || 0) + initialPositionCost();
   if (!dates.length) {
-    const now = portfolioSnapshot([], []);
+    const now = calculatePortfolio([]);
+    const marketValue = now.positions.reduce((sum, item) => sum + item.marketValue, 0);
+    const assets = now.cash + marketValue;
     return [
       {
         date: "当前",
         cash: now.cash,
-        marketValue: now.marketValue,
-        assets: now.assets,
-        pnl: now.assets - initialAssets,
+        marketValue,
+        assets,
+        pnl: assets - initialAssets,
       },
     ];
   }
 
   return dates.map((date) => {
     const trades = state.trades.filter((trade) => trade.date <= date);
-    const actions = state.corporateActions.filter((action) => action.date <= date);
-    const snapshot = portfolioSnapshot(trades, actions);
+    const snapshot = calculatePortfolio(trades);
+    const marketValue = snapshot.positions.reduce((sum, item) => sum + item.marketValue, 0);
+    const assets = snapshot.cash + marketValue;
     return {
       date,
       cash: snapshot.cash,
-      marketValue: snapshot.marketValue,
-      assets: snapshot.assets,
-      pnl: snapshot.assets - initialAssets,
+      marketValue,
+      assets,
+      pnl: assets - initialAssets,
     };
   });
 }
@@ -2682,8 +2657,11 @@ function periodOptions(kind) {
 }
 
 function snapshotAssetsBefore(startDate) {
-  const snapshot = startDate ? portfolioSnapshotBefore(startDate) : portfolioSnapshot([], []);
-  return snapshot.assets > 0 ? snapshot.assets : (Number(state.settings.initialCash) || 0) + initialPositionCost();
+  const trades = state.trades.filter((trade) => !startDate || trade.date < startDate);
+  const snapshot = calculatePortfolio(trades);
+  const marketValue = snapshot.positions.reduce((sum, position) => sum + position.marketValue, 0);
+  const assets = snapshot.cash + marketValue;
+  return assets > 0 ? assets : (Number(state.settings.initialCash) || 0) + initialPositionCost();
 }
 
 function rangeMatchDetails(startDate, endDate, symbol = "") {
@@ -2700,59 +2678,40 @@ function rangeMatchDetails(startDate, endDate, symbol = "") {
 function calculatePeriodOverview(kind, key) {
   const bounds = periodBounds(kind, key);
   const summary = calculateRangeSummary(bounds.startDate, bounds.endDate);
-  const startSnapshot = portfolioSnapshotBefore(bounds.startDate);
-  const endSnapshot = portfolioSnapshotThrough(bounds.endDate);
-  const startAssets = startSnapshot.assets;
-  const endAssets = endSnapshot.assets;
-  const assetChange = endAssets - startAssets;
+  const startAssets = snapshotAssetsBefore(bounds.startDate);
   const matches = rangeMatchDetails(bounds.startDate, bounds.endDate);
   const winRate = matches.length ? (matches.filter((match) => match.pnl > 0).length / matches.length) * 100 : 0;
+  const floating = summary.totalPnl - summary.matched - summary.dividends;
   const previousKey = previousPeriodKey(kind, key);
   const previousBounds = periodBounds(kind, previousKey);
-  const previousStart = portfolioSnapshotBefore(previousBounds.startDate);
-  const previousEnd = portfolioSnapshotThrough(previousBounds.endDate);
-  const previousPnl = previousEnd.assets - previousStart.assets;
-  const change = assetChange - previousPnl;
+  const previous = calculateRangeSummary(previousBounds.startDate, previousBounds.endDate);
+  const change = summary.totalPnl - previous.totalPnl;
   return {
     ...summary,
     ...bounds,
     key,
     kind,
     startAssets,
-    endAssets,
-    totalPnl: assetChange,
-    returnRate: startAssets > 0 ? (assetChange / startAssets) * 100 : null,
-    cashStart: startSnapshot.cash,
-    cashEnd: endSnapshot.cash,
-    cashChange: endSnapshot.cash - startSnapshot.cash,
-    marketValueStart: startSnapshot.marketValue,
-    marketValueEnd: endSnapshot.marketValue,
-    marketValueChange: endSnapshot.marketValue - startSnapshot.marketValue,
-    floating: endSnapshot.positions.reduce((sum, position) => sum + position.floating, 0) - startSnapshot.positions.reduce((sum, position) => sum + position.floating, 0),
+    returnRate: startAssets > 0 ? (summary.totalPnl / startAssets) * 100 : null,
+    floating,
     matchCount: matches.length,
     winRate,
     previousKey,
-    previousPnl,
+    previousPnl: previous.totalPnl,
     change,
   };
 }
 
-function positionBySymbolFrom(trades, actions = state.corporateActions) {
-  return new Map(calculatePortfolio(trades, actions).positions.map((position) => [position.symbol, position]));
+function positionBySymbolFrom(trades) {
+  return new Map(calculatePortfolio(trades).positions.map((position) => [position.symbol, position]));
 }
 
 function calculatePeriodStockRows(kind, key) {
   const bounds = periodBounds(kind, key);
   const names = stockNameMap();
   const currentPositions = new Map(calculatePortfolio().positions.map((position) => [position.symbol, position]));
-  const startPositions = positionBySymbolFrom(
-    state.trades.filter((trade) => trade.date < bounds.startDate),
-    state.corporateActions.filter((action) => action.date < bounds.startDate),
-  );
-  const endPositions = positionBySymbolFrom(
-    state.trades.filter((trade) => trade.date <= bounds.endDate),
-    state.corporateActions.filter((action) => action.date <= bounds.endDate),
-  );
+  const startPositions = positionBySymbolFrom(state.trades.filter((trade) => trade.date < bounds.startDate));
+  const endPositions = positionBySymbolFrom(state.trades.filter((trade) => trade.date <= bounds.endDate));
   const assetTotal = portfolioTotals().assets;
 
   return [...allKnownSymbols()]
@@ -2769,22 +2728,15 @@ function calculatePeriodStockRows(kind, key) {
       const floating = endFloating - startFloating;
       const startTotalPnl = startPositions.get(keySymbol)?.totalPnl || 0;
       const endTotalPnl = endPositions.get(keySymbol)?.totalPnl || 0;
-      const startMarketValue = startPositions.get(keySymbol)?.marketValue || 0;
-      const endMarketValue = endPositions.get(keySymbol)?.marketValue || 0;
       const current = currentPositions.get(keySymbol) || { quantity: 0, marketValue: 0, name: names.get(keySymbol) || keySymbol };
       const tradeCount = trades.length;
       const winRate = matches.length ? (matches.filter((match) => match.pnl > 0).length / matches.length) * 100 : 0;
-      const totalPnl = endTotalPnl - startTotalPnl;
-      const assetRealized = totalPnl - floating;
+      const totalPnl = endTotalPnl - startTotalPnl + dividends;
       const hasActivity = tradeCount || actions.length || matches.length || current.quantity > 0 || Math.abs(totalPnl) > 0.000001;
       return {
         symbol: keySymbol,
         name: current.name || names.get(keySymbol) || keySymbol,
         totalPnl,
-        startMarketValue,
-        endMarketValue,
-        marketValueChange: endMarketValue - startMarketValue,
-        assetRealized,
         matched,
         floating,
         dividends,
@@ -3276,9 +3228,9 @@ function latestStockSellDate(symbol) {
   return dates.sort((a, b) => b.localeCompare(a))[0] || "";
 }
 
-function stockDividendTotal(symbol, actions = state.corporateActions) {
+function stockDividendTotal(symbol) {
   const key = normalizeSymbol(symbol);
-  return actions
+  return state.corporateActions
     .filter((action) => normalizeSymbol(action.symbol) === key && action.type === "dividend")
     .reduce((sum, action) => sum + (Number(action.value) || 0), 0);
 }
@@ -4051,20 +4003,16 @@ function renderPerformanceSummary() {
 
 function renderPerformanceMetrics(overview) {
   const cards = [
-    { label: "期初总资产", value: money(overview.startAssets), tone: "" },
-    { label: "期末总资产", value: money(overview.endAssets), tone: "" },
-    { label: "资产变化", value: money(overview.totalPnl), tone: classByValue(overview.totalPnl) },
-    { label: "阶段收益率", value: overview.returnRate === null ? "-" : `${number(overview.returnRate, 2)}%`, tone: classByValue(overview.returnRate || 0) },
-    { label: "现金变化", value: money(overview.cashChange), tone: classByValue(overview.cashChange) },
-    { label: "市值变化", value: money(overview.marketValueChange), tone: classByValue(overview.marketValueChange) },
+    { label: "总盈亏", value: money(overview.totalPnl), tone: classByValue(overview.totalPnl) },
+    { label: "收益率", value: overview.returnRate === null ? "-" : `${number(overview.returnRate, 2)}%`, tone: classByValue(overview.returnRate || 0) },
     { label: "匹配实现", value: money(overview.matched), tone: classByValue(overview.matched) },
-    { label: "浮动变化", value: money(overview.floating), tone: classByValue(overview.floating) },
+    { label: "浮动盈亏", value: money(overview.floating), tone: classByValue(overview.floating) },
     { label: "分红", value: money(overview.dividends), tone: classByValue(overview.dividends) },
     { label: "手续费", value: money(overview.fees), tone: "" },
+    { label: "交易次数", value: `${overview.tradeCount} 笔`, tone: "" },
+    { label: "胜率", value: overview.matchCount ? `${number(overview.winRate, 1)}%` : "-", tone: classByValue(overview.winRate - 50) },
     { label: "买入金额", value: money(overview.buyAmount), tone: "" },
     { label: "卖出金额", value: money(overview.sellAmount), tone: "" },
-    { label: "交易次数", value: `${overview.tradeCount} 笔`, tone: "" },
-    { label: "匹配胜率", value: overview.matchCount ? `${number(overview.winRate, 1)}%` : "-", tone: classByValue(overview.winRate - 50) },
     { label: "对比上期", value: `${summaryToneText(overview.change)} ${money(overview.change)}`, tone: classByValue(overview.change) },
   ];
 
@@ -4082,29 +4030,22 @@ function renderPerformanceMetrics(overview) {
 
 function renderOverallInsights(overview, stockRows) {
   const absParts = [
-    { label: "现金变化", value: overview.cashChange },
-    { label: "持仓市值变化", value: overview.marketValueChange },
     { label: "低买高卖实现", value: overview.matched },
+    { label: "持仓浮动变化", value: overview.floating },
     { label: "现金分红", value: overview.dividends },
   ].sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
   const main = absParts[0] || { label: "暂无明显来源", value: 0 };
   const feePressure = Math.abs(overview.totalPnl) > 0 ? (overview.fees / Math.max(Math.abs(overview.totalPnl), 1)) * 100 : 0;
   const maxAllocation = stockRows.length ? Math.max(...stockRows.map((row) => row.allocation)) : 0;
-  const best = stockRows[0];
-  const worst = stockRows[stockRows.length - 1];
   const tradeText = overview.matchCount
     ? `本周期完成 ${overview.matchCount} 组买卖匹配，胜率 ${number(overview.winRate, 1)}%。${overview.winRate >= 55 ? "交易结果偏积极。" : overview.winRate <= 40 ? "胜率偏低，建议复盘亏损匹配。" : "胜率中性，重点看单笔盈亏质量。"}`
     : "本周期还没有完成买卖匹配，低买高卖效果暂时无法评价。";
   const insights = [
-    `本周期资产从 ${money(overview.startAssets)} 到 ${money(overview.endAssets)}，变化 ${money(overview.totalPnl)}，阶段收益率 ${overview.returnRate === null ? "-" : `${number(overview.returnRate, 2)}%`}。`,
-    `资产变化主要来自${main.label}：${money(main.value)}；其中现金变化 ${money(overview.cashChange)}，持仓市值变化 ${money(overview.marketValueChange)}。`,
+    `本周期总盈亏为 ${money(overview.totalPnl)}，主要影响来自${main.label}：${money(main.value)}。`,
     tradeText,
     feePressure > 8
       ? `手续费为 ${money(overview.fees)}，相对盈亏占比偏高，频繁交易可能正在侵蚀收益。`
       : `手续费为 ${money(overview.fees)}，目前没有明显拖累整体表现。`,
-    best && worst
-      ? `个股贡献上，${best.name} 贡献最大：${money(best.totalPnl)}；${worst.totalPnl < 0 ? `${worst.name} 拖累最大：${money(worst.totalPnl)}。` : "本周期没有明显负贡献个股。"}`
-      : "个股贡献暂时不足，录入交易或当前价后会更清楚。",
     maxAllocation > 45
       ? `最大个股仓位约 ${number(maxAllocation, 1)}%，仓位较集中，单只股票波动会明显影响账户。`
       : `最大个股仓位约 ${number(maxAllocation, 1)}%，仓位集中度相对可控。`,
@@ -4116,7 +4057,7 @@ function renderOverallInsights(overview, stockRows) {
 
 function renderPerformanceStockRows(rows) {
   if (!rows.length) {
-    els.summaryStockBody.innerHTML = `<tr><td colspan="11" class="empty-state">暂无个股总结数据</td></tr>`;
+    els.summaryStockBody.innerHTML = `<tr><td colspan="9" class="empty-state">暂无个股总结数据</td></tr>`;
     els.summaryStockCards.innerHTML = `<div class="empty-state">暂无个股总结数据</div>`;
     return;
   }
@@ -4127,14 +4068,12 @@ function renderPerformanceStockRows(rows) {
         <tr>
           <td>${row.name}<small class="subtle-detail">${row.symbol}</small></td>
           <td class="${classByValue(row.totalPnl)}">${money(row.totalPnl)}</td>
-          <td>${money(row.startMarketValue)}</td>
-          <td>${money(row.endMarketValue)}</td>
           <td class="${classByValue(row.matched)}">${money(row.matched)}</td>
           <td class="${classByValue(row.floating)}">${money(row.floating)}</td>
-          <td class="${classByValue(row.assetRealized)}">${money(row.assetRealized)}</td>
           <td>${money(row.dividends)}</td>
           <td>${money(row.fees)}</td>
           <td>${row.tradeCount}</td>
+          <td>${row.matchCount ? `${number(row.winRate, 1)}%` : "-"}</td>
           <td>${number(row.allocation, 1)}%</td>
         </tr>
       `,
@@ -4150,15 +4089,13 @@ function renderPerformanceStockRows(rows) {
             <span>${row.symbol}</span>
           </div>
           <dl>
-            <div><dt>资产贡献</dt><dd class="${classByValue(row.totalPnl)}">${money(row.totalPnl)}</dd></div>
-            <div><dt>期初市值</dt><dd>${money(row.startMarketValue)}</dd></div>
-            <div><dt>期末市值</dt><dd>${money(row.endMarketValue)}</dd></div>
+            <div><dt>周期总盈亏</dt><dd class="${classByValue(row.totalPnl)}">${money(row.totalPnl)}</dd></div>
             <div><dt>匹配实现</dt><dd class="${classByValue(row.matched)}">${money(row.matched)}</dd></div>
-            <div><dt>浮动变化</dt><dd class="${classByValue(row.floating)}">${money(row.floating)}</dd></div>
-            <div><dt>资产实现</dt><dd class="${classByValue(row.assetRealized)}">${money(row.assetRealized)}</dd></div>
+            <div><dt>浮动盈亏</dt><dd class="${classByValue(row.floating)}">${money(row.floating)}</dd></div>
             <div><dt>分红</dt><dd>${money(row.dividends)}</dd></div>
             <div><dt>手续费</dt><dd>${money(row.fees)}</dd></div>
             <div><dt>交易</dt><dd>${row.tradeCount}</dd></div>
+            <div><dt>胜率</dt><dd>${row.matchCount ? `${number(row.winRate, 1)}%` : "-"}</dd></div>
             <div><dt>仓位占比</dt><dd>${number(row.allocation, 1)}%</dd></div>
           </dl>
         </article>
@@ -4176,15 +4113,11 @@ function renderStockInsights(rows) {
   const best = rows[0];
   const worst = rows[rows.length - 1];
   const bestMatched = [...rows].sort((a, b) => b.matched - a.matched)[0];
-  const strongestMarket = [...rows].sort((a, b) => b.marketValueChange - a.marketValueChange)[0];
   const feeHeavy = [...rows].sort((a, b) => b.fees - a.fees)[0];
   const heavyPosition = [...rows].sort((a, b) => b.allocation - a.allocation)[0];
   const insights = [
-    `资产贡献最大的是 ${best.name}，阶段贡献 ${money(best.totalPnl)}，期初市值 ${money(best.startMarketValue)}，期末市值 ${money(best.endMarketValue)}。`,
-    worst.totalPnl < 0 ? `拖累最大的是 ${worst.name}，阶段贡献 ${money(worst.totalPnl)}，建议重点复盘买卖点、仓位和持仓理由。` : "本周期没有明显负贡献个股。",
-    strongestMarket && Math.abs(strongestMarket.marketValueChange) > 0
-      ? `${strongestMarket.name} 的持仓市值变化最大，为 ${money(strongestMarket.marketValueChange)}，这是资产波动的重点来源之一。`
-      : "本周期持仓市值变化不明显，资产变化更多来自现金和交易动作。",
+    `贡献最大的是 ${best.name}，本周期总盈亏 ${money(best.totalPnl)}。`,
+    worst.totalPnl < 0 ? `拖累最大的是 ${worst.name}，本周期总盈亏 ${money(worst.totalPnl)}，建议重点复盘买卖点和持仓理由。` : "本周期没有明显亏损拖累的个股。",
     bestMatched && bestMatched.matched > 0
       ? `低买高卖效果最好的是 ${bestMatched.name}，匹配实现 ${money(bestMatched.matched)}。`
       : "本周期低买高卖尚未形成明显正贡献。",
