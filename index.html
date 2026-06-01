@@ -2511,8 +2511,7 @@ function calculatePortfolio(trades = state.trades) {
     const floating = marketValue - holdingCost;
     const totalPnl = quantity > 0 ? marketValue - adjustedCost : book.realized + stockDividendTotal(book.symbol);
     const assetRealized = totalPnl - floating;
-    const previousClose = Number(state.previousCloses[book.symbol]) || 0;
-    const dayPnl = price > 0 && previousClose > 0 ? quantity * (price - previousClose) : 0;
+    const dayPnl = calculateStockDayPnl(book.symbol, quantity, price, trades);
     realizedRows.push(...book.realizedRows);
 
     return {
@@ -2537,6 +2536,39 @@ function calculatePortfolio(trades = state.trades) {
   });
 
   return { positions, realizedRows, cash };
+}
+
+function latestTradeDate(trades = state.trades) {
+  return sortedTrades(trades).at(-1)?.date || today();
+}
+
+function calculateStockDayPnl(symbol, endingQuantity, currentPrice, trades = state.trades) {
+  const key = normalizeSymbol(symbol);
+  const price = Number(currentPrice) || 0;
+  const previousClose = Number(state.previousCloses[key]) || 0;
+  if (!price) return 0;
+
+  const dayKey = latestTradeDate(trades);
+  const dayTrades = sortedTrades(trades).filter((trade) => normalizeSymbol(trade.symbol) === key && trade.date === dayKey);
+  const traded = dayTrades.reduce(
+    (acc, trade) => {
+      const amount = tradeAmount(trade);
+      if (trade.side === "buy") {
+        acc.buyQuantity += trade.quantity;
+        acc.buyAmount += amount;
+      } else {
+        acc.sellQuantity += trade.quantity;
+        acc.sellAmount += amount;
+      }
+      acc.fees += totalFee(trade);
+      return acc;
+    },
+    { buyQuantity: 0, sellQuantity: 0, buyAmount: 0, sellAmount: 0, fees: 0 },
+  );
+  const openingQuantity = Math.max(0, endingQuantity - traded.buyQuantity + traded.sellQuantity);
+  const openingPrice = previousClose || price;
+
+  return endingQuantity * price + traded.sellAmount - traded.buyAmount - openingQuantity * openingPrice - traded.fees;
 }
 
 function uniqueTradeDates() {
