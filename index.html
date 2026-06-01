@@ -631,6 +631,39 @@ button {
   gap: 18px;
 }
 
+.summary-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.segmented-control {
+  display: inline-grid;
+  grid-auto-flow: column;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+
+.segmented-control button {
+  min-width: 44px;
+  min-height: 34px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.segmented-control button.active {
+  background: linear-gradient(135deg, #1b5960, #1b3945);
+  color: #ffffff;
+}
+
 .insight-list {
   margin: 0;
   padding: 0;
@@ -899,7 +932,7 @@ td {
   }
 
   .nav {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 
   .nav-button {
@@ -928,7 +961,7 @@ td {
 
 @media (max-width: 620px) {
   body {
-    padding-bottom: 124px;
+    padding-bottom: 168px;
   }
 
   input,
@@ -937,7 +970,7 @@ td {
   }
 
   .content {
-    padding: 12px 10px 132px;
+    padding: 12px 10px 172px;
   }
 
   .topbar {
@@ -1051,6 +1084,21 @@ td {
     grid-template-columns: 1fr;
   }
 
+  .summary-toolbar {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .segmented-control,
+  .summary-toolbar .search-box {
+    width: 100%;
+  }
+
+  .segmented-control {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-flow: row;
+  }
+
   .allocation-layout {
     grid-template-columns: 1fr;
     justify-items: center;
@@ -1158,6 +1206,7 @@ td {
           <button class="nav-button" data-view="trade-form">新增交易</button>
           <button class="nav-button" data-view="positions">持仓</button>
           <button class="nav-button" data-view="records">流水记录</button>
+          <button class="nav-button" data-view="performance-summary">总结</button>
           <button class="nav-button" data-view="reports">复盘报表</button>
           <button class="nav-button" data-view="settings">设置</button>
         </nav>
@@ -1229,8 +1278,12 @@ td {
               <strong id="metric-year-pnl">¥0.00</strong>
             </article>
             <article class="metric">
-              <span>实现盈亏</span>
+              <span>资产实现盈亏</span>
               <strong id="metric-realized">¥0.00</strong>
+            </article>
+            <article class="metric">
+              <span>匹配实现盈亏</span>
+              <strong id="metric-matched-realized">¥0.00</strong>
             </article>
             <article class="metric">
               <span>手续总费</span>
@@ -1331,6 +1384,72 @@ td {
               </table>
             </div>
             <div class="mobile-list" id="trade-pair-pnl-cards"></div>
+          </section>
+        </section>
+
+        <section class="view" id="performance-summary">
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <div>
+                <h3>投资表现总结</h3>
+                <span>先看整体账户，再看个股贡献与问题</span>
+              </div>
+              <div class="summary-toolbar">
+                <div class="segmented-control" id="summary-kind-tabs">
+                  <button class="active" data-summary-kind="week" type="button">周</button>
+                  <button data-summary-kind="month" type="button">月</button>
+                  <button data-summary-kind="quarter" type="button">季</button>
+                  <button data-summary-kind="year" type="button">年</button>
+                </div>
+                <label class="search-box">
+                  <span>周期</span>
+                  <select id="summary-period"></select>
+                </label>
+              </div>
+            </div>
+            <div class="metric-grid six" id="summary-overall-metrics"></div>
+          </section>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <h3>整体智能分析</h3>
+            </div>
+            <ul class="insight-list" id="summary-overall-insights"></ul>
+          </section>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <div>
+                <h3>个股表现排行</h3>
+                <span>显示周期内有记录或当前仍持仓的股票</span>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>股票</th>
+                    <th>周期总盈亏</th>
+                    <th>匹配实现</th>
+                    <th>浮动盈亏</th>
+                    <th>分红</th>
+                    <th>手续费</th>
+                    <th>交易</th>
+                    <th>胜率</th>
+                    <th>仓位占比</th>
+                  </tr>
+                </thead>
+                <tbody id="summary-stock-body"></tbody>
+              </table>
+            </div>
+            <div class="mobile-list" id="summary-stock-cards"></div>
+          </section>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <h3>个股智能分析</h3>
+            </div>
+            <ul class="insight-list" id="summary-stock-insights"></ul>
           </section>
         </section>
 
@@ -1488,7 +1607,8 @@ td {
                     <th>当日盈亏</th>
                     <th>浮动盈亏</th>
                     <th>收益率</th>
-                    <th>实现盈亏</th>
+                    <th>资产实现</th>
+                    <th>匹配实现</th>
                     <th>总盈亏</th>
                     <th>详情</th>
                   </tr>
@@ -1598,7 +1718,6 @@ td {
                     <th>佣金</th>
                     <th>印花税</th>
                     <th>过户费</th>
-                    <th>匹配盈亏</th>
                     <th>备注</th>
                     <th>操作</th>
                   </tr>
@@ -1819,6 +1938,7 @@ const state = {
   settings: { ...defaultSettings },
 };
 let selectedDetailSymbol = "";
+let summaryPeriodKind = "week";
 
 function optionalElement(selector) {
   return (
@@ -1890,6 +2010,7 @@ const els = {
   monthPnl: optionalElement("#metric-month-pnl"),
   yearPnl: optionalElement("#metric-year-pnl"),
   realized: document.querySelector("#metric-realized"),
+  matchedRealized: optionalElement("#metric-matched-realized"),
   totalFees: optionalElement("#metric-total-fees"),
   dividends: optionalElement("#metric-dividends"),
   tradePairPnlBody: document.querySelector("#trade-pair-pnl-body"),
@@ -1902,6 +2023,13 @@ const els = {
   monthlyReportCards: optionalElement("#monthly-report-cards"),
   yearlyReportBody: optionalElement("#yearly-report-body"),
   yearlyReportCards: optionalElement("#yearly-report-cards"),
+  summaryKindButtons: document.querySelectorAll("[data-summary-kind]"),
+  summaryPeriod: optionalElement("#summary-period"),
+  summaryOverallMetrics: optionalElement("#summary-overall-metrics"),
+  summaryOverallInsights: optionalElement("#summary-overall-insights"),
+  summaryStockBody: optionalElement("#summary-stock-body"),
+  summaryStockCards: optionalElement("#summary-stock-cards"),
+  summaryStockInsights: optionalElement("#summary-stock-insights"),
   openTimelineDetail: optionalElement("#open-timeline-detail"),
   detailTitle: optionalElement("#detail-title"),
   detailSubtitle: optionalElement("#detail-subtitle"),
@@ -1942,6 +2070,7 @@ const titles = {
   "trade-form": "新增交易",
   positions: "持仓",
   records: "流水记录",
+  "performance-summary": "投资总结",
   reports: "复盘报表",
   "stock-detail": "个股详情",
   settings: "设置",
@@ -1998,6 +2127,82 @@ function dateInRange(date, startDate = "", endDate = "") {
   if (range.startDate && date < range.startDate) return false;
   if (range.endDate && date > range.endDate) return false;
   return true;
+}
+
+function localDate(dateString) {
+  const [year, month, day] = String(dateString || today()).split("-").map(Number);
+  return new Date(year, (month || 1) - 1, day || 1);
+}
+
+function formatDate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function addDays(dateString, days) {
+  const date = localDate(dateString);
+  date.setDate(date.getDate() + days);
+  return formatDate(date);
+}
+
+function isoWeekInfo(dateString) {
+  const date = localDate(dateString);
+  const day = (date.getDay() + 6) % 7;
+  const thursday = new Date(date);
+  thursday.setDate(date.getDate() - day + 3);
+  const year = thursday.getFullYear();
+  const firstThursday = new Date(year, 0, 4);
+  const firstDay = (firstThursday.getDay() + 6) % 7;
+  firstThursday.setDate(firstThursday.getDate() - firstDay + 3);
+  const week = 1 + Math.round((thursday - firstThursday) / 604800000);
+  return { year, week };
+}
+
+function periodKeyForDate(kind, dateString) {
+  if (!validDateString(dateString)) return "";
+  const date = localDate(dateString);
+  if (kind === "week") {
+    const info = isoWeekInfo(dateString);
+    return `${info.year}-W${String(info.week).padStart(2, "0")}`;
+  }
+  if (kind === "quarter") return `${date.getFullYear()}-Q${Math.floor(date.getMonth() / 3) + 1}`;
+  if (kind === "year") return String(date.getFullYear());
+  return dateString.slice(0, 7);
+}
+
+function periodBounds(kind, key) {
+  if (kind === "week") {
+    const [yearPart, weekPart] = String(key || "").split("-W");
+    const year = Number(yearPart);
+    const week = Number(weekPart);
+    const jan4 = new Date(year, 0, 4);
+    const jan4Day = (jan4.getDay() + 6) % 7;
+    const start = new Date(jan4);
+    start.setDate(jan4.getDate() - jan4Day + (week - 1) * 7);
+    const startDate = formatDate(start);
+    return { startDate, endDate: addDays(startDate, 6) };
+  }
+  if (kind === "quarter") {
+    const [yearPart, quarterPart] = String(key || "").split("-Q");
+    const year = Number(yearPart);
+    const quarter = Number(quarterPart);
+    const startMonth = (quarter - 1) * 3 + 1;
+    const startDate = `${year}-${String(startMonth).padStart(2, "0")}-01`;
+    const endDate = `${year}-${String(startMonth + 2).padStart(2, "0")}-${String(new Date(year, startMonth + 2, 0).getDate()).padStart(2, "0")}`;
+    return { startDate, endDate };
+  }
+  if (kind === "year") return { startDate: `${key}-01-01`, endDate: `${key}-12-31` };
+  return { startDate: `${key}-01`, endDate: monthEndDate(key) };
+}
+
+function previousPeriodKey(kind, key) {
+  const bounds = periodBounds(kind, key);
+  return periodKeyForDate(kind, addDays(bounds.startDate, -1));
+}
+
+function periodLabel(kind, key) {
+  const bounds = periodBounds(kind, key);
+  const label = kind === "week" ? "周" : kind === "month" ? "月" : kind === "quarter" ? "季" : "年";
+  return `${key} ${label} (${bounds.startDate} 至 ${bounds.endDate})`;
 }
 
 function daysSince(dateString) {
@@ -2130,11 +2335,13 @@ function buildInitialBooks() {
       totalFees: 0,
       originalQuantity: 0,
       originalCost: 0,
+      adjustedCost: 0,
     };
 
     book.name = item.name || book.name;
     book.originalQuantity += Number(item.quantity) || 0;
     book.originalCost += Number(item.cost) || 0;
+    book.adjustedCost += Number(item.cost) || 0;
     book.lots.push({
       quantity: item.quantity,
       unitCost: item.quantity > 0 ? item.cost / item.quantity : 0,
@@ -2168,6 +2375,7 @@ function applyBonusActions(books) {
       totalFees: 0,
       originalQuantity: 0,
       originalCost: 0,
+      adjustedCost: 0,
     };
     const currentQuantity = book.lots.reduce((sum, lot) => sum + lot.quantity, 0);
     const totalCost = book.lots.reduce((sum, lot) => sum + lot.quantity * lot.unitCost, 0);
@@ -2226,6 +2434,7 @@ function calculatePortfolio(trades = state.trades) {
       totalFees: 0,
       originalQuantity: 0,
       originalCost: 0,
+      adjustedCost: 0,
     };
     const fees = tradeFees(trade);
     const fee = fees.commission + fees.stampTax + fees.transferFee;
@@ -2246,6 +2455,7 @@ function calculatePortfolio(trades = state.trades) {
         date: trade.date,
       });
       book.buyCount += 1;
+      book.adjustedCost += amount + fee;
       cash -= amount + fee;
     } else {
       let remaining = trade.quantity;
@@ -2265,6 +2475,7 @@ function calculatePortfolio(trades = state.trades) {
       const realized = soldQuantity > 0 ? proceeds - costBasis : 0;
       book.realized += realized;
       book.sellCount += 1;
+      book.adjustedCost -= proceeds;
       book.realizedRows.push({
         symbol: key,
         name: book.name,
@@ -2282,15 +2493,24 @@ function calculatePortfolio(trades = state.trades) {
   }
 
   applyOriginalCostAdjustments(books);
+  state.corporateActions
+    .filter((action) => action.type === "dividend")
+    .forEach((action) => {
+      const book = books.get(normalizeSymbol(action.symbol));
+      if (book) book.adjustedCost -= Number(action.value) || 0;
+    });
 
   const realizedRows = [];
   const positions = [...books.values()].map((book) => {
     const quantity = book.lots.reduce((sum, lot) => sum + lot.quantity, 0);
-    const cost = book.lots.reduce((sum, lot) => sum + lot.quantity * lot.unitCost, 0);
+    const holdingCost = book.lots.reduce((sum, lot) => sum + lot.quantity * lot.unitCost, 0);
+    const adjustedCost = quantity > 0 ? book.adjustedCost : 0;
     const currentPrice = state.prices[book.symbol] ?? "";
     const price = Number(currentPrice) || 0;
     const marketValue = quantity * price;
-    const floating = marketValue - cost;
+    const floating = marketValue - holdingCost;
+    const totalPnl = quantity > 0 ? marketValue - adjustedCost : book.realized + stockDividendTotal(book.symbol);
+    const assetRealized = totalPnl - floating;
     const previousClose = Number(state.previousCloses[book.symbol]) || 0;
     const dayPnl = price > 0 && previousClose > 0 ? quantity * (price - previousClose) : 0;
     realizedRows.push(...book.realizedRows);
@@ -2299,13 +2519,16 @@ function calculatePortfolio(trades = state.trades) {
       symbol: book.symbol,
       name: book.name,
       quantity,
-      cost,
+      cost: holdingCost,
+      adjustedCost,
       initialAverageCost: book.originalQuantity > 0 ? book.originalCost / book.originalQuantity : 0,
-      averageCost: quantity > 0 ? cost / quantity : 0,
+      averageCost: quantity > 0 ? adjustedCost / quantity : 0,
       currentPrice,
       marketValue,
       dayPnl,
       floating,
+      assetRealized,
+      totalPnl,
       realized: book.realized,
       buyCount: book.buyCount,
       sellCount: book.sellCount,
@@ -2324,15 +2547,18 @@ function uniqueTradeDates() {
 
 function calculateEquityCurve() {
   const dates = uniqueTradeDates();
+  const initialAssets = (Number(state.settings.initialCash) || 0) + initialPositionCost();
   if (!dates.length) {
     const now = calculatePortfolio([]);
+    const marketValue = now.positions.reduce((sum, item) => sum + item.marketValue, 0);
+    const assets = now.cash + marketValue;
     return [
       {
         date: "当前",
         cash: now.cash,
-        marketValue: now.positions.reduce((sum, item) => sum + item.marketValue, 0),
-        assets: now.cash + now.positions.reduce((sum, item) => sum + item.marketValue, 0),
-        pnl: now.positions.reduce((sum, item) => sum + item.floating, 0) + matchedPnlTotal([]),
+        marketValue,
+        assets,
+        pnl: assets - initialAssets,
       },
     ];
   }
@@ -2341,13 +2567,13 @@ function calculateEquityCurve() {
     const trades = state.trades.filter((trade) => trade.date <= date);
     const snapshot = calculatePortfolio(trades);
     const marketValue = snapshot.positions.reduce((sum, item) => sum + item.marketValue, 0);
-    const totalPnl = snapshot.positions.reduce((sum, item) => sum + item.floating, 0) + matchedPnlTotal(trades);
+    const assets = snapshot.cash + marketValue;
     return {
       date,
       cash: snapshot.cash,
       marketValue,
-      assets: snapshot.cash + marketValue,
-      pnl: totalPnl,
+      assets,
+      pnl: assets - initialAssets,
     };
   });
 }
@@ -2373,13 +2599,15 @@ function periodPnlSummary(rows) {
   const now = new Date();
   const monthKey = latest ? latest.date.slice(0, 7) : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const yearKey = latest ? latest.date.slice(0, 4) : String(now.getFullYear());
+  const dayKey = latest ? latest.date : today();
   return rows.reduce(
     (acc, row) => {
+      if (row.date === dayKey) acc.day += row.periodPnl;
       if (row.date.startsWith(monthKey)) acc.month += row.periodPnl;
       if (row.date.startsWith(yearKey)) acc.year += row.periodPnl;
       return acc;
     },
-    { month: 0, year: 0, monthKey, yearKey },
+    { day: 0, month: 0, year: 0, dayKey, monthKey, yearKey },
   );
 }
 
@@ -2404,7 +2632,7 @@ function calculateRangeSummary(startDate = "", endDate = "") {
   return {
     ...range,
     pnl: rows.reduce((sum, row) => sum + row.periodPnl, 0),
-    totalPnl: rows.reduce((sum, row) => sum + row.periodPnl, 0) + dividends,
+    totalPnl: rows.reduce((sum, row) => sum + row.periodPnl, 0),
     matched,
     tradeCount: trades.length,
     buyAmount,
@@ -2412,6 +2640,122 @@ function calculateRangeSummary(startDate = "", endDate = "") {
     fees,
     dividends,
   };
+}
+
+function allActivityDates() {
+  const dates = [
+    ...state.initialPositions.map((item) => item.date),
+    ...state.trades.map((trade) => trade.date),
+    ...state.corporateActions.map((action) => action.date),
+  ].filter(validDateString);
+  return dates.length ? dates : [today()];
+}
+
+function periodOptions(kind) {
+  const keys = [...new Set(allActivityDates().map((date) => periodKeyForDate(kind, date)).filter(Boolean))];
+  return keys.sort((a, b) => b.localeCompare(a));
+}
+
+function snapshotAssetsBefore(startDate) {
+  const trades = state.trades.filter((trade) => !startDate || trade.date < startDate);
+  const snapshot = calculatePortfolio(trades);
+  const marketValue = snapshot.positions.reduce((sum, position) => sum + position.marketValue, 0);
+  const assets = snapshot.cash + marketValue;
+  return assets > 0 ? assets : (Number(state.settings.initialCash) || 0) + initialPositionCost();
+}
+
+function rangeMatchDetails(startDate, endDate, symbol = "") {
+  const key = normalizeSymbol(symbol);
+  return calculateTradePairPnL()
+    .filter((row) => !key || row.symbol === key)
+    .flatMap((row) => (row.matchDetails || []).map((match) => ({ ...match, symbol: row.symbol, name: row.name })))
+    .filter((match) => {
+      const completionDate = match.buyDate > match.sellDate ? match.buyDate : match.sellDate;
+      return dateInRange(completionDate, startDate, endDate);
+    });
+}
+
+function calculatePeriodOverview(kind, key) {
+  const bounds = periodBounds(kind, key);
+  const summary = calculateRangeSummary(bounds.startDate, bounds.endDate);
+  const startAssets = snapshotAssetsBefore(bounds.startDate);
+  const matches = rangeMatchDetails(bounds.startDate, bounds.endDate);
+  const winRate = matches.length ? (matches.filter((match) => match.pnl > 0).length / matches.length) * 100 : 0;
+  const floating = summary.totalPnl - summary.matched - summary.dividends;
+  const previousKey = previousPeriodKey(kind, key);
+  const previousBounds = periodBounds(kind, previousKey);
+  const previous = calculateRangeSummary(previousBounds.startDate, previousBounds.endDate);
+  const change = summary.totalPnl - previous.totalPnl;
+  return {
+    ...summary,
+    ...bounds,
+    key,
+    kind,
+    startAssets,
+    returnRate: startAssets > 0 ? (summary.totalPnl / startAssets) * 100 : null,
+    floating,
+    matchCount: matches.length,
+    winRate,
+    previousKey,
+    previousPnl: previous.totalPnl,
+    change,
+  };
+}
+
+function positionBySymbolFrom(trades) {
+  return new Map(calculatePortfolio(trades).positions.map((position) => [position.symbol, position]));
+}
+
+function calculatePeriodStockRows(kind, key) {
+  const bounds = periodBounds(kind, key);
+  const names = stockNameMap();
+  const currentPositions = new Map(calculatePortfolio().positions.map((position) => [position.symbol, position]));
+  const startPositions = positionBySymbolFrom(state.trades.filter((trade) => trade.date < bounds.startDate));
+  const endPositions = positionBySymbolFrom(state.trades.filter((trade) => trade.date <= bounds.endDate));
+  const assetTotal = portfolioTotals().assets;
+
+  return [...allKnownSymbols()]
+    .map((symbol) => {
+      const keySymbol = normalizeSymbol(symbol);
+      const trades = state.trades.filter((trade) => normalizeSymbol(trade.symbol) === keySymbol && dateInRange(trade.date, bounds.startDate, bounds.endDate));
+      const actions = state.corporateActions.filter((action) => normalizeSymbol(action.symbol) === keySymbol && dateInRange(action.date, bounds.startDate, bounds.endDate));
+      const dividends = actions.filter((action) => action.type === "dividend").reduce((sum, action) => sum + (Number(action.value) || 0), 0);
+      const fees = trades.reduce((sum, trade) => sum + totalFee(trade), 0);
+      const matches = rangeMatchDetails(bounds.startDate, bounds.endDate, keySymbol);
+      const matched = matches.reduce((sum, match) => sum + match.pnl, 0);
+      const startFloating = startPositions.get(keySymbol)?.floating || 0;
+      const endFloating = endPositions.get(keySymbol)?.floating || 0;
+      const floating = endFloating - startFloating;
+      const startTotalPnl = startPositions.get(keySymbol)?.totalPnl || 0;
+      const endTotalPnl = endPositions.get(keySymbol)?.totalPnl || 0;
+      const current = currentPositions.get(keySymbol) || { quantity: 0, marketValue: 0, name: names.get(keySymbol) || keySymbol };
+      const tradeCount = trades.length;
+      const winRate = matches.length ? (matches.filter((match) => match.pnl > 0).length / matches.length) * 100 : 0;
+      const totalPnl = endTotalPnl - startTotalPnl + dividends;
+      const hasActivity = tradeCount || actions.length || matches.length || current.quantity > 0 || Math.abs(totalPnl) > 0.000001;
+      return {
+        symbol: keySymbol,
+        name: current.name || names.get(keySymbol) || keySymbol,
+        totalPnl,
+        matched,
+        floating,
+        dividends,
+        fees,
+        tradeCount,
+        matchCount: matches.length,
+        winRate,
+        allocation: assetTotal > 0 ? (current.marketValue / assetTotal) * 100 : 0,
+        currentQuantity: current.quantity || 0,
+      };
+    })
+    .filter((row) => row.symbol && row.name && (row.currentQuantity > 0 || row.tradeCount || row.dividends || row.matchCount || Math.abs(row.totalPnl) > 0.000001))
+    .sort((a, b) => b.totalPnl - a.totalPnl);
+}
+
+function summaryToneText(change) {
+  if (change > 0) return "改善";
+  if (change < 0) return "下降";
+  return "持平";
 }
 
 function stockNameMap() {
@@ -2772,7 +3116,6 @@ function updatePreview() {
 }
 
 function buildFlowRecords() {
-  const pnlByTrade = new Map(calculatePortfolio().realizedRows.map((row) => [row.tradeId, row.pnl]));
   const tradeFlows = state.trades.map((trade) => {
     const fees = tradeFees(trade);
     const fee = fees.commission + fees.stampTax + fees.transferFee;
@@ -2791,7 +3134,6 @@ function buildFlowRecords() {
       stampTax: money(fees.stampTax),
       transferFee: money(fees.transferFee),
       fee,
-      pnl: trade.side === "sell" ? pnlByTrade.get(trade.id) || 0 : null,
       note: trade.note || "",
       order: trade.createdAt || 0,
     };
@@ -2813,7 +3155,6 @@ function buildFlowRecords() {
       stampTax: "-",
       transferFee: "-",
       fee: 0,
-      pnl: null,
       note: action.note || "",
       order: 0,
     };
@@ -2923,7 +3264,7 @@ function renderRecords() {
   const records = buildFlowRecords().filter((row) => `${row.symbol} ${row.name} ${row.type} ${row.note}`.toLowerCase().includes(keyword));
 
   if (!records.length) {
-    els.recordsBody.innerHTML = `<tr><td colspan="13" class="empty-state">还没有流水记录</td></tr>`;
+    els.recordsBody.innerHTML = `<tr><td colspan="12" class="empty-state">还没有流水记录</td></tr>`;
     els.recordsCards.innerHTML = `<div class="empty-state">还没有流水记录</div>`;
     return;
   }
@@ -2949,7 +3290,6 @@ function renderRecords() {
           <td>${row.commission}</td>
           <td>${row.stampTax}</td>
           <td>${row.transferFee}</td>
-          <td class="${classByValue(row.pnl || 0)}">${row.pnl === null ? "-" : money(row.pnl)}</td>
           <td>${row.note || "-"}</td>
           <td>
             <div class="row-actions">
@@ -2983,7 +3323,6 @@ function renderRecords() {
             <div><dt>数量</dt><dd>${row.quantity}</dd></div>
             <div><dt>金额</dt><dd>${row.amount}</dd></div>
             <div><dt>费用</dt><dd>${row.fee ? money(row.fee) : "-"}</dd></div>
-            <div><dt>匹配盈亏</dt><dd class="${classByValue(row.pnl || 0)}">${row.pnl === null ? "-" : money(row.pnl)}</dd></div>
           </dl>
           <p>${row.note || "无备注"}</p>
           <div class="row-actions">
@@ -3028,15 +3367,16 @@ function renderPositions() {
     .filter((row) => row.realized !== 0 || row.dividends !== 0 || state.trades.some((trade) => normalizeSymbol(trade.symbol) === row.symbol));
 
   if (!current.length) {
-    els.positionsBody.innerHTML = `<tr><td colspan="13" class="empty-state">暂无当前持仓</td></tr>`;
+    els.positionsBody.innerHTML = `<tr><td colspan="14" class="empty-state">暂无当前持仓</td></tr>`;
     els.positionsCards.innerHTML = `<div class="empty-state">暂无当前持仓</div>`;
   } else {
     const sorted = current.sort((a, b) => b.marketValue - a.marketValue);
 
     els.positionsBody.innerHTML = sorted
       .map((position) => {
-        const realized = matchedBySymbol.get(position.symbol) || 0;
-        const totalPnl = position.floating + realized;
+        const matchedRealized = matchedBySymbol.get(position.symbol) || 0;
+        const investedCost = stockInvestedCost(position.symbol);
+        const returnRate = investedCost > 0 ? (position.totalPnl / investedCost) * 100 : 0;
         return `
           <tr>
             <td>${position.symbol}</td>
@@ -3048,9 +3388,10 @@ function renderPositions() {
             <td>${money(position.marketValue)}</td>
             <td class="${classByValue(position.dayPnl)}">${money(position.dayPnl)}</td>
             <td class="${classByValue(position.floating)}">${money(position.floating)}</td>
-            <td class="${classByValue(position.floating)}">${position.cost > 0 ? `${number((position.floating / position.cost) * 100, 2)}%` : "-"}</td>
-            <td class="${classByValue(realized)}">${money(realized)}</td>
-            <td class="${classByValue(totalPnl)}">${money(totalPnl)}</td>
+            <td class="${classByValue(returnRate)}">${investedCost > 0 ? `${number(returnRate, 2)}%` : "-"}</td>
+            <td class="${classByValue(position.assetRealized)}">${money(position.assetRealized)}</td>
+            <td class="${classByValue(matchedRealized)}">${money(matchedRealized)}</td>
+            <td class="${classByValue(position.totalPnl)}">${money(position.totalPnl)}</td>
             <td><button class="icon-action" data-detail-symbol="${position.symbol}">详情</button></td>
           </tr>
         `;
@@ -3059,8 +3400,9 @@ function renderPositions() {
 
     els.positionsCards.innerHTML = sorted
       .map((position) => {
-        const realized = matchedBySymbol.get(position.symbol) || 0;
-        const totalPnl = position.floating + realized;
+        const matchedRealized = matchedBySymbol.get(position.symbol) || 0;
+        const investedCost = stockInvestedCost(position.symbol);
+        const returnRate = investedCost > 0 ? (position.totalPnl / investedCost) * 100 : 0;
         return `
           <article class="mobile-card">
             <div class="mobile-card-head">
@@ -3074,9 +3416,10 @@ function renderPositions() {
               <div><dt>市值</dt><dd>${money(position.marketValue)}</dd></div>
               <div><dt>当日盈亏</dt><dd class="${classByValue(position.dayPnl)}">${money(position.dayPnl)}</dd></div>
               <div><dt>浮动盈亏</dt><dd class="${classByValue(position.floating)}">${money(position.floating)}</dd></div>
-              <div><dt>实现盈亏</dt><dd class="${classByValue(realized)}">${money(realized)}</dd></div>
-              <div><dt>总盈亏</dt><dd class="${classByValue(totalPnl)}">${money(totalPnl)}</dd></div>
-              <div><dt>收益率</dt><dd class="${classByValue(position.floating)}">${position.cost > 0 ? `${number((position.floating / position.cost) * 100, 2)}%` : "-"}</dd></div>
+              <div><dt>资产实现</dt><dd class="${classByValue(position.assetRealized)}">${money(position.assetRealized)}</dd></div>
+              <div><dt>匹配实现</dt><dd class="${classByValue(matchedRealized)}">${money(matchedRealized)}</dd></div>
+              <div><dt>总盈亏</dt><dd class="${classByValue(position.totalPnl)}">${money(position.totalPnl)}</dd></div>
+              <div><dt>收益率</dt><dd class="${classByValue(returnRate)}">${investedCost > 0 ? `${number(returnRate, 2)}%` : "-"}</dd></div>
             </dl>
             <label class="mobile-price">
               当前价
@@ -3148,10 +3491,11 @@ function renderDashboard() {
   const assets = totals.assets;
   const initialAssets = (Number(state.settings.initialCash) || 0) + initialPositionCost();
   const totalReturnRate = initialAssets > 0 ? ((assets - initialAssets) / initialAssets) * 100 : 0;
-  const matchedRealized = matchedPnlTotal();
-  const totalPnl = totals.floating + matchedRealized;
-  const dayPnl = calculateDayPnl();
+  const totalPnl = assets - initialAssets;
   const periodSummary = periodPnlSummary(calculatePnlCalendarRows());
+  const dayPnl = periodSummary.day;
+  const assetRealizedPnl = totalPnl - totals.floating - dividendTotal();
+  const matchedRealized = matchedPnlTotal();
   const sellCount = state.trades.filter((trade) => trade.side === "sell").length;
   const winCount = realizedRows.filter((row) => row.pnl > 0).length;
   const winRate = sellCount ? (winCount / sellCount) * 100 : 0;
@@ -3166,7 +3510,8 @@ function renderDashboard() {
   els.dayPnl.textContent = money(dayPnl);
   els.monthPnl.textContent = money(periodSummary.month);
   els.yearPnl.textContent = money(periodSummary.year);
-  els.realized.textContent = money(matchedRealized);
+  els.realized.textContent = money(assetRealizedPnl);
+  els.matchedRealized.textContent = money(matchedRealized);
   els.totalFees.textContent = money(totalFees);
   els.dividends.textContent = money(dividendTotal());
   els.totalReturn.className = classByValue(totalReturnRate);
@@ -3176,7 +3521,8 @@ function renderDashboard() {
   els.dayPnl.className = classByValue(dayPnl);
   els.monthPnl.className = classByValue(periodSummary.month);
   els.yearPnl.className = classByValue(periodSummary.year);
-  els.realized.className = classByValue(matchedRealized);
+  els.realized.className = classByValue(assetRealizedPnl);
+  els.matchedRealized.className = classByValue(matchedRealized);
   els.summaryCount.textContent = `${state.trades.length} 笔交易`;
   const backupAge = daysSince(state.settings.lastBackupAt);
   const shouldRemindBackup = !state.settings.lastBackupAt || backupAge >= 7;
@@ -3487,6 +3833,8 @@ function renderStockDetail() {
     currentPrice: state.prices[symbol] ?? "",
     marketValue: 0,
     floating: 0,
+    assetRealized: 0,
+    totalPnl: 0,
     dayPnl: 0,
     realized: 0,
   };
@@ -3497,13 +3845,12 @@ function renderStockDetail() {
     pnl: 0,
   };
   const matchedRealized = pair.pnl || 0;
-  const closedRealized = Number(position.realized) || 0;
-  const realized = position.quantity > 0 ? matchedRealized : closedRealized;
+  const assetRealized = Number(position.assetRealized) || 0;
   const dividends = stockDividendTotal(symbol);
-  const totalPnl = position.floating + realized + dividends;
+  const totalPnl = Number(position.totalPnl) || 0;
   const investedCost = stockInvestedCost(symbol);
   const totalReturnRate = investedCost > 0 ? (totalPnl / investedCost) * 100 : 0;
-  const status = position.quantity > 0 ? "当前持仓" : realized !== 0 || stockEvents(symbol).length ? "已清仓/历史" : "暂无记录";
+  const status = position.quantity > 0 ? "当前持仓" : assetRealized !== 0 || stockEvents(symbol).length ? "已清仓/历史" : "暂无记录";
   const startDate = firstStockDate(symbol);
   const lastEvent = stockEvents(symbol)[0];
   const endDate = position.quantity > 0 ? today() : lastEvent ? lastEvent.date : today();
@@ -3522,7 +3869,7 @@ function renderStockDetail() {
     <article class="metric"><span>现在成本</span><strong>${money(position.averageCost)}</strong></article>
     <article class="metric"><span>持有天数</span><strong>${days}</strong></article>
     <article class="metric"><span>浮动盈亏</span><strong class="${classByValue(position.floating)}">${money(position.floating)}</strong></article>
-    <article class="metric"><span>实现盈亏</span><strong class="${classByValue(realized)}">${money(realized)}</strong></article>
+    <article class="metric"><span>资产实现</span><strong class="${classByValue(assetRealized)}">${money(assetRealized)}</strong></article>
     <article class="metric"><span>低买高卖</span><strong class="${classByValue(matchedRealized)}">${money(matchedRealized)}</strong></article>
     <article class="metric"><span>累计分红</span><strong>${money(dividends)}</strong></article>
     <article class="metric"><span>总盈亏</span><strong class="${classByValue(totalPnl)}">${money(totalPnl)}</strong></article>
@@ -3545,7 +3892,7 @@ function renderStockDetail() {
     <article class="compare-card">
       <span>合计效果</span>
       <strong class="${classByValue(totalPnl)}">${money(totalPnl)}</strong>
-      <small class="subtle-detail">总盈亏 = 浮动盈亏 + 实现盈亏 + 分红。</small>
+      <small class="subtle-detail">总盈亏按资产口径计算；低买高卖匹配单独显示，不含原始持仓。</small>
     </article>
   `;
   els.detailUnmatched.innerHTML = pair.unmatchedDetails && pair.unmatchedDetails.length
@@ -3637,6 +3984,152 @@ function renderReportTable(rows, bodyEl, cardsEl, emptyText) {
 function renderReports() {
   renderReportTable(buildPeriodReports("month"), els.monthlyReportBody, els.monthlyReportCards, "暂无月度报表");
   renderReportTable(buildPeriodReports("year"), els.yearlyReportBody, els.yearlyReportCards, "暂无年度报表");
+}
+
+function renderPerformanceSummary() {
+  els.summaryKindButtons.forEach((button) => button.classList.toggle("active", button.dataset.summaryKind === summaryPeriodKind));
+  const options = periodOptions(summaryPeriodKind);
+  const selected = options.includes(els.summaryPeriod.value) ? els.summaryPeriod.value : options[0];
+  els.summaryPeriod.innerHTML = options.map((key) => `<option value="${key}">${periodLabel(summaryPeriodKind, key)}</option>`).join("");
+  els.summaryPeriod.value = selected;
+
+  const overview = calculatePeriodOverview(summaryPeriodKind, selected);
+  const rows = calculatePeriodStockRows(summaryPeriodKind, selected);
+  renderPerformanceMetrics(overview);
+  renderOverallInsights(overview, rows);
+  renderPerformanceStockRows(rows);
+  renderStockInsights(rows);
+}
+
+function renderPerformanceMetrics(overview) {
+  const cards = [
+    { label: "总盈亏", value: money(overview.totalPnl), tone: classByValue(overview.totalPnl) },
+    { label: "收益率", value: overview.returnRate === null ? "-" : `${number(overview.returnRate, 2)}%`, tone: classByValue(overview.returnRate || 0) },
+    { label: "匹配实现", value: money(overview.matched), tone: classByValue(overview.matched) },
+    { label: "浮动盈亏", value: money(overview.floating), tone: classByValue(overview.floating) },
+    { label: "分红", value: money(overview.dividends), tone: classByValue(overview.dividends) },
+    { label: "手续费", value: money(overview.fees), tone: "" },
+    { label: "交易次数", value: `${overview.tradeCount} 笔`, tone: "" },
+    { label: "胜率", value: overview.matchCount ? `${number(overview.winRate, 1)}%` : "-", tone: classByValue(overview.winRate - 50) },
+    { label: "买入金额", value: money(overview.buyAmount), tone: "" },
+    { label: "卖出金额", value: money(overview.sellAmount), tone: "" },
+    { label: "对比上期", value: `${summaryToneText(overview.change)} ${money(overview.change)}`, tone: classByValue(overview.change) },
+  ];
+
+  els.summaryOverallMetrics.innerHTML = cards
+    .map(
+      (card) => `
+        <article class="metric">
+          <span>${card.label}</span>
+          <strong class="${card.tone}">${card.value}</strong>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderOverallInsights(overview, stockRows) {
+  const absParts = [
+    { label: "低买高卖实现", value: overview.matched },
+    { label: "持仓浮动变化", value: overview.floating },
+    { label: "现金分红", value: overview.dividends },
+  ].sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+  const main = absParts[0] || { label: "暂无明显来源", value: 0 };
+  const feePressure = Math.abs(overview.totalPnl) > 0 ? (overview.fees / Math.max(Math.abs(overview.totalPnl), 1)) * 100 : 0;
+  const maxAllocation = stockRows.length ? Math.max(...stockRows.map((row) => row.allocation)) : 0;
+  const tradeText = overview.matchCount
+    ? `本周期完成 ${overview.matchCount} 组买卖匹配，胜率 ${number(overview.winRate, 1)}%。${overview.winRate >= 55 ? "交易结果偏积极。" : overview.winRate <= 40 ? "胜率偏低，建议复盘亏损匹配。" : "胜率中性，重点看单笔盈亏质量。"}`
+    : "本周期还没有完成买卖匹配，低买高卖效果暂时无法评价。";
+  const insights = [
+    `本周期总盈亏为 ${money(overview.totalPnl)}，主要影响来自${main.label}：${money(main.value)}。`,
+    tradeText,
+    feePressure > 8
+      ? `手续费为 ${money(overview.fees)}，相对盈亏占比偏高，频繁交易可能正在侵蚀收益。`
+      : `手续费为 ${money(overview.fees)}，目前没有明显拖累整体表现。`,
+    maxAllocation > 45
+      ? `最大个股仓位约 ${number(maxAllocation, 1)}%，仓位较集中，单只股票波动会明显影响账户。`
+      : `最大个股仓位约 ${number(maxAllocation, 1)}%，仓位集中度相对可控。`,
+    `相比上一周期，表现${summaryToneText(overview.change)}，变化为 ${money(overview.change)}。`,
+  ];
+
+  els.summaryOverallInsights.innerHTML = insights.map((item) => `<li>${item}</li>`).join("");
+}
+
+function renderPerformanceStockRows(rows) {
+  if (!rows.length) {
+    els.summaryStockBody.innerHTML = `<tr><td colspan="9" class="empty-state">暂无个股总结数据</td></tr>`;
+    els.summaryStockCards.innerHTML = `<div class="empty-state">暂无个股总结数据</div>`;
+    return;
+  }
+
+  els.summaryStockBody.innerHTML = rows
+    .map(
+      (row) => `
+        <tr>
+          <td>${row.name}<small class="subtle-detail">${row.symbol}</small></td>
+          <td class="${classByValue(row.totalPnl)}">${money(row.totalPnl)}</td>
+          <td class="${classByValue(row.matched)}">${money(row.matched)}</td>
+          <td class="${classByValue(row.floating)}">${money(row.floating)}</td>
+          <td>${money(row.dividends)}</td>
+          <td>${money(row.fees)}</td>
+          <td>${row.tradeCount}</td>
+          <td>${row.matchCount ? `${number(row.winRate, 1)}%` : "-"}</td>
+          <td>${number(row.allocation, 1)}%</td>
+        </tr>
+      `,
+    )
+    .join("");
+
+  els.summaryStockCards.innerHTML = rows
+    .map(
+      (row) => `
+        <article class="mobile-card">
+          <div class="mobile-card-head">
+            <strong>${row.name}</strong>
+            <span>${row.symbol}</span>
+          </div>
+          <dl>
+            <div><dt>周期总盈亏</dt><dd class="${classByValue(row.totalPnl)}">${money(row.totalPnl)}</dd></div>
+            <div><dt>匹配实现</dt><dd class="${classByValue(row.matched)}">${money(row.matched)}</dd></div>
+            <div><dt>浮动盈亏</dt><dd class="${classByValue(row.floating)}">${money(row.floating)}</dd></div>
+            <div><dt>分红</dt><dd>${money(row.dividends)}</dd></div>
+            <div><dt>手续费</dt><dd>${money(row.fees)}</dd></div>
+            <div><dt>交易</dt><dd>${row.tradeCount}</dd></div>
+            <div><dt>胜率</dt><dd>${row.matchCount ? `${number(row.winRate, 1)}%` : "-"}</dd></div>
+            <div><dt>仓位占比</dt><dd>${number(row.allocation, 1)}%</dd></div>
+          </dl>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderStockInsights(rows) {
+  if (!rows.length) {
+    els.summaryStockInsights.innerHTML = `<li>暂无个股数据，开始记录交易或录入当前价后会生成分析。</li>`;
+    return;
+  }
+
+  const best = rows[0];
+  const worst = rows[rows.length - 1];
+  const bestMatched = [...rows].sort((a, b) => b.matched - a.matched)[0];
+  const feeHeavy = [...rows].sort((a, b) => b.fees - a.fees)[0];
+  const heavyPosition = [...rows].sort((a, b) => b.allocation - a.allocation)[0];
+  const insights = [
+    `贡献最大的是 ${best.name}，本周期总盈亏 ${money(best.totalPnl)}。`,
+    worst.totalPnl < 0 ? `拖累最大的是 ${worst.name}，本周期总盈亏 ${money(worst.totalPnl)}，建议重点复盘买卖点和持仓理由。` : "本周期没有明显亏损拖累的个股。",
+    bestMatched && bestMatched.matched > 0
+      ? `低买高卖效果最好的是 ${bestMatched.name}，匹配实现 ${money(bestMatched.matched)}。`
+      : "本周期低买高卖尚未形成明显正贡献。",
+    feeHeavy && feeHeavy.fees > 0
+      ? `${feeHeavy.name} 的费用最高，为 ${money(feeHeavy.fees)}，交易频率和单笔收益需要一起看。`
+      : "本周期个股费用压力不明显。",
+    heavyPosition && heavyPosition.allocation > 40
+      ? `${heavyPosition.name} 仓位占比 ${number(heavyPosition.allocation, 1)}%，属于重点影响账户波动的核心持仓。`
+      : "当前没有单只股票仓位特别突出的风险信号。",
+  ];
+
+  els.summaryStockInsights.innerHTML = insights.map((item) => `<li>${item}</li>`).join("");
 }
 
 function renderSettings() {
@@ -3797,7 +4290,7 @@ function saveAccountSettings() {
 }
 
 function renderAll() {
-  const renderers = [renderDashboard, renderPositions, renderRecords, renderSettings];
+  const renderers = [renderDashboard, renderPerformanceSummary, renderPositions, renderRecords, renderSettings];
   for (const render of renderers) {
     try {
       render();
@@ -3960,9 +4453,8 @@ function csvCell(value) {
 }
 
 function exportCsv() {
-  const pnlByTrade = new Map(calculatePortfolio().realizedRows.map((row) => [row.tradeId, row.pnl]));
   const rows = [
-    ["日期", "代码", "名称", "类型", "价格", "数量", "金额", "佣金", "印花税", "过户费", "总费用", "匹配盈亏", "备注"],
+    ["日期", "代码", "名称", "类型", "价格", "数量", "金额", "佣金", "印花税", "过户费", "总费用", "备注"],
     ...state.trades.map((trade) => {
       const fees = tradeFees(trade);
       const fee = fees.commission + fees.stampTax + fees.transferFee;
@@ -3978,7 +4470,6 @@ function exportCsv() {
         fees.stampTax,
         fees.transferFee,
         fee,
-        trade.side === "sell" ? pnlByTrade.get(trade.id) || 0 : "",
         trade.note || "",
       ];
     }),
@@ -3990,7 +4481,6 @@ function exportCsv() {
       "",
       action.type === "bonus" ? action.value : "",
       action.type === "dividend" ? action.value : "",
-      "",
       "",
       "",
       "",
@@ -4107,6 +4597,14 @@ els.recordFilter.addEventListener("input", renderRecords);
 els.calendarMonth.addEventListener("change", renderEquityCurve);
 els.rangeStartDate.addEventListener("change", renderRangeSummary);
 els.rangeEndDate.addEventListener("change", renderRangeSummary);
+els.summaryKindButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    summaryPeriodKind = button.dataset.summaryKind || "week";
+    els.summaryPeriod.value = "";
+    renderPerformanceSummary();
+  });
+});
+els.summaryPeriod.addEventListener("change", renderPerformanceSummary);
 els.pairStartDate.addEventListener("change", renderTradePairPnL);
 els.pairEndDate.addEventListener("change", renderTradePairPnL);
 els.timelineSymbol.addEventListener("change", renderStockTimeline);
@@ -4143,6 +4641,7 @@ els.positionsBody.addEventListener("input", (event) => {
   state.prices[symbol] = event.target.value;
   save();
   renderDashboard();
+  renderPerformanceSummary();
 });
 
 els.positionsCards.addEventListener("input", (event) => {
@@ -4151,6 +4650,7 @@ els.positionsCards.addEventListener("input", (event) => {
   state.prices[symbol] = event.target.value;
   save();
   renderDashboard();
+  renderPerformanceSummary();
 });
 
 els.positionsBody.addEventListener("click", (event) => {
