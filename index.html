@@ -4211,6 +4211,26 @@ function deleteCloseSnapshot(id) {
 function renderCloseSnapshotPositions(snapshot) {
   const rows = Array.isArray(snapshot.positions) ? snapshot.positions : [];
   if (!rows.length) return `<div class="empty-state">这天没有持仓明细</div>`;
+  const positionCards = rows
+    .map(
+      (position) => `
+        <article class="mobile-card">
+          <div class="mobile-card-head">
+            <strong>${position.name}</strong>
+            <span>${position.symbol}</span>
+          </div>
+          <dl>
+            <div><dt>数量</dt><dd>${number(position.quantity, 0)}</dd></div>
+            <div><dt>收盘价</dt><dd>${money(position.price)}</dd></div>
+            <div><dt>市值</dt><dd>${money(position.marketValue)}</dd></div>
+            <div><dt>当日盈亏</dt><dd class="${classByValue(position.dayPnl)}">${money(position.dayPnl)}</dd></div>
+            <div><dt>总盈亏</dt><dd class="${classByValue(position.totalPnl)}">${money(position.totalPnl)}</dd></div>
+            <div><dt>匹配实现</dt><dd class="${classByValue(position.matchedPnl)}">${money(position.matchedPnl)}</dd></div>
+          </dl>
+        </article>
+      `,
+    )
+    .join("");
 
   return `
     <div class="table-wrap compact-table snapshot-detail">
@@ -4245,6 +4265,7 @@ function renderCloseSnapshotPositions(snapshot) {
         </tbody>
       </table>
     </div>
+    <div class="mobile-list snapshot-detail">${positionCards}</div>
   `;
 }
 
