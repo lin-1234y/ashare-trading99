@@ -1318,6 +1318,7 @@ td {
   }
 
   .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
   }
 
@@ -1326,18 +1327,24 @@ td {
     gap: 10px;
   }
 
+  .form-grid .wide {
+    grid-column: 1 / -1;
+  }
+
   label {
     gap: 6px;
   }
 
   .allocation-layout {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    gap: 8px;
+    grid-template-columns: minmax(104px, 34vw) minmax(0, 1fr);
+    justify-items: stretch;
+    align-items: center;
+    gap: 10px;
   }
 
   .pie-chart {
-    width: min(46vw, 156px);
+    width: min(34vw, 128px);
+    justify-self: center;
   }
 
   .pie-chart span {
@@ -1347,15 +1354,16 @@ td {
 
   .allocation-list {
     width: 100%;
+    gap: 3px;
   }
 
   .allocation-row {
     width: 100%;
-    grid-template-columns: 10px minmax(0, 1fr) 48px 88px;
-    gap: 6px;
-    padding: 5px 0;
+    grid-template-columns: 9px minmax(0, 1fr) 42px;
+    gap: 5px;
+    padding: 4px 0;
     border-bottom: 1px solid rgba(213, 225, 223, 0.75);
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .allocation-row strong {
@@ -1364,11 +1372,12 @@ td {
   }
 
   .allocation-row span:last-child {
-    grid-column: auto;
-    justify-self: end;
+    grid-column: 2 / 4;
+    justify-self: start;
     font-weight: 800;
     color: var(--text);
-    text-align: right;
+    text-align: left;
+    font-size: 11px;
   }
 
   .pnl-calendar {
@@ -1430,6 +1439,32 @@ td {
     gap: 7px 10px;
   }
 
+  #records-cards .mobile-card dl,
+  #summary-stock-cards .mobile-card dl,
+  #report-daily-cards .mobile-card dl,
+  #initial-positions-cards .mobile-card dl,
+  #corporate-actions-cards .mobile-card dl {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px 8px;
+  }
+
+  #records-cards .mobile-card p {
+    max-height: 2.9em;
+    overflow: hidden;
+  }
+
+  #records-cards .row-actions,
+  #initial-positions-cards .row-actions,
+  #corporate-actions-cards .row-actions {
+    margin-top: 2px;
+  }
+
+  #records-cards .icon-action,
+  #initial-positions-cards .icon-action,
+  #corporate-actions-cards .icon-action {
+    flex: 1;
+  }
+
   .mobile-card-head strong {
     font-size: 15px;
     overflow-wrap: anywhere;
@@ -1445,6 +1480,79 @@ td {
 
   .mobile-card dd {
     font-size: 14px;
+  }
+
+  .position-card {
+    padding: 9px 10px;
+    gap: 7px;
+  }
+
+  .position-card-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .position-card-head strong {
+    display: block;
+    font-size: 15px;
+    overflow-wrap: anywhere;
+  }
+
+  .position-card-head span {
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  .position-compact-grid {
+    display: grid;
+    grid-template-columns: 0.85fr 1.1fr 82px;
+    gap: 6px 8px;
+    align-items: end;
+  }
+
+  .position-compact-grid div {
+    min-width: 0;
+  }
+
+  .position-compact-grid dt,
+  .position-extra dt {
+    color: var(--muted);
+    font-size: 10px;
+    margin-bottom: 2px;
+  }
+
+  .position-compact-grid dd,
+  .position-extra dd {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+  }
+
+  .compact-price-input {
+    width: 100%;
+    min-height: 30px;
+    padding: 4px 6px;
+  }
+
+  .position-extra {
+    border-top: 1px solid rgba(213, 225, 223, 0.75);
+    padding-top: 6px;
+  }
+
+  .position-extra summary {
+    cursor: pointer;
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .position-extra dl {
+    margin-top: 6px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
   }
 
   .row-actions {
@@ -1463,8 +1571,14 @@ td {
     padding: 9px 10px;
   }
 
+  .quote-box {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
   .quote-box strong {
     font-size: 16px;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -2011,11 +2125,11 @@ td {
               </label>
             </div>
             <div class="form-grid">
-              <label>
+              <label class="wide">
                 作战备注
                 <textarea id="plan-note" rows="4" placeholder="买入逻辑、卖出条件、仓位纪律"></textarea>
               </label>
-              <label>
+              <label class="wide">
                 复盘笔记
                 <textarea id="plan-review" rows="4" placeholder="做对了什么、错在哪里、下次规则"></textarea>
               </label>
@@ -3950,28 +4064,30 @@ function renderPositions() {
         const investedCost = stockInvestedCost(position.symbol);
         const returnRate = investedCost > 0 ? (position.totalPnl / investedCost) * 100 : 0;
         return `
-          <article class="mobile-card">
-            <div class="mobile-card-head">
-              <strong>${position.name}</strong>
-              <span>${position.symbol}</span>
-            </div>
-            <dl>
-              <div><dt>数量</dt><dd>${number(position.quantity, 0)}</dd></div>
-              <div><dt>原始成本</dt><dd>${money(position.initialAverageCost)}</dd></div>
-              <div><dt>现在成本</dt><dd>${money(position.averageCost)}</dd></div>
-              <div><dt>市值</dt><dd>${money(position.marketValue)}</dd></div>
-              <div><dt>当日盈亏</dt><dd class="${classByValue(position.dayPnl)}">${money(position.dayPnl)}</dd></div>
-              <div><dt>匹配实现</dt><dd class="${classByValue(matchedRealized)}">${money(matchedRealized)}</dd></div>
-              <div><dt>总盈亏</dt><dd class="${classByValue(position.totalPnl)}">${money(position.totalPnl)}</dd></div>
-              <div><dt>收益率</dt><dd class="${classByValue(returnRate)}">${investedCost > 0 ? `${number(returnRate, 2)}%` : "-"}</dd></div>
-            </dl>
-            <label class="mobile-price">
-              当前价
-              <input class="current-price-input" type="number" min="0" step="0.001" value="${position.currentPrice}" data-price-symbol="${position.symbol}" />
-            </label>
-            <div class="row-actions">
+          <article class="mobile-card position-card">
+            <div class="position-card-head">
+              <div>
+                <strong>${position.name}</strong>
+                <span>${position.symbol}</span>
+              </div>
               <button class="icon-action" data-detail-symbol="${position.symbol}">详情</button>
             </div>
+            <div class="position-compact-grid">
+              <div><dt>数量</dt><dd>${number(position.quantity, 0)}</dd></div>
+              <div><dt>市值</dt><dd>${money(position.marketValue)}</dd></div>
+              <div><dt>现价</dt><dd><input class="current-price-input compact-price-input" type="number" min="0" step="0.001" value="${position.currentPrice}" data-price-symbol="${position.symbol}" /></dd></div>
+              <div><dt>当日</dt><dd class="${classByValue(position.dayPnl)}">${money(position.dayPnl)}</dd></div>
+              <div><dt>总盈亏</dt><dd class="${classByValue(position.totalPnl)}">${money(position.totalPnl)}</dd></div>
+              <div><dt>收益率</dt><dd class="${classByValue(returnRate)}">${investedCost > 0 ? `${number(returnRate, 2)}%` : "-"}</dd></div>
+            </div>
+            <details class="position-extra">
+              <summary>成本与匹配</summary>
+              <dl>
+                <div><dt>原始成本</dt><dd>${money(position.initialAverageCost)}</dd></div>
+                <div><dt>现在成本</dt><dd>${money(position.averageCost)}</dd></div>
+                <div><dt>匹配实现</dt><dd class="${classByValue(matchedRealized)}">${money(matchedRealized)}</dd></div>
+              </dl>
+            </details>
           </article>
         `;
       })
