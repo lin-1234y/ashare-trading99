@@ -951,12 +951,12 @@ td {
 }
 
 .positive {
-  color: var(--sell);
+  color: var(--buy);
   font-weight: 700;
 }
 
 .negative {
-  color: var(--buy);
+  color: var(--sell);
   font-weight: 700;
 }
 
@@ -1082,7 +1082,7 @@ td {
   }
 
   .nav {
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .nav-button {
@@ -1111,7 +1111,7 @@ td {
 
 @media (max-width: 620px) {
   body {
-    padding-bottom: 168px;
+    padding-bottom: 126px;
   }
 
   input,
@@ -1120,18 +1120,18 @@ td {
   }
 
   .content {
-    padding: 12px 10px 172px;
+    padding: 12px 10px 132px;
   }
 
   .topbar {
     align-items: flex-start;
     flex-direction: column;
-    gap: 12px;
-    margin-bottom: 16px;
+    gap: 10px;
+    margin-bottom: 12px;
   }
 
   .topbar h2 {
-    font-size: 22px;
+    font-size: 21px;
   }
 
   .nav {
@@ -1140,7 +1140,7 @@ td {
     right: 0;
     bottom: 0;
     z-index: 20;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 6px;
     padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
     background: rgba(13, 43, 51, 0.98);
@@ -1148,9 +1148,9 @@ td {
   }
 
   .nav-button {
-    min-height: 38px;
-    padding: 0 6px;
-    font-size: 12px;
+    min-height: 36px;
+    padding: 0 4px;
+    font-size: 11px;
     border-radius: 8px;
     text-align: center;
     background: rgba(255, 255, 255, 0.05);
@@ -1183,12 +1183,12 @@ td {
   }
 
   .metric strong {
-    font-size: 17px;
+    font-size: 16px;
   }
 
   .metric {
-    min-height: 68px;
-    padding: 11px 12px;
+    min-height: 58px;
+    padding: 9px 10px;
     display: grid;
     align-content: center;
     gap: 4px;
@@ -1196,6 +1196,9 @@ td {
 
   .summary-button {
     grid-template-columns: 1fr auto;
+    min-height: 40px;
+    padding: 8px 9px;
+    font-size: 13px;
   }
 
   .summary-button small {
@@ -1204,17 +1207,26 @@ td {
 
   .metric-grid.six {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    gap: 8px;
+    margin-bottom: 12px;
   }
 
   .range-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    gap: 8px;
+  }
+
+  .range-summary .metric {
+    padding: 9px 10px;
+  }
+
+  .range-summary .metric strong {
+    font-size: 16px;
   }
 
   .metric span {
     margin-bottom: 0;
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .metric strong {
@@ -1223,19 +1235,45 @@ td {
 
   .panel,
   .form-panel {
-    padding: 14px 12px;
+    padding: 12px 10px;
+  }
+
+  .spacing-top {
+    margin-top: 12px;
   }
 
   .timeline-item {
     grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .timeline-list {
+    gap: 8px;
   }
 
   .detail-hero {
     flex-direction: column;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .detail-hero h3 {
+    font-size: 19px;
   }
 
   .compare-grid {
     grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .compare-card {
+    padding: 11px;
+  }
+
+  .compare-card strong {
+    font-size: 18px;
   }
 
   .report-grid {
@@ -1245,6 +1283,7 @@ td {
   .summary-toolbar {
     width: 100%;
     justify-content: stretch;
+    gap: 8px;
   }
 
   .segmented-control,
@@ -1257,19 +1296,53 @@ td {
     grid-auto-flow: row;
   }
 
+  .date-filter {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .date-filter .primary-button,
+  .date-filter .ghost-button,
+  .date-filter .danger-button {
+    grid-column: 1 / -1;
+  }
+
+  .date-filter input,
+  .date-filter select {
+    min-height: 34px;
+  }
+
+  .search-box {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .form-grid {
+    gap: 10px;
+  }
+
+  .form-grid.compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  label {
+    gap: 6px;
+  }
+
   .allocation-layout {
     grid-template-columns: 1fr;
     justify-items: center;
-    gap: 12px;
+    gap: 8px;
   }
 
   .pie-chart {
-    width: min(68vw, 210px);
+    width: min(46vw, 156px);
   }
 
   .pie-chart span {
-    max-width: 94px;
-    font-size: 14px;
+    max-width: 78px;
+    font-size: 12px;
   }
 
   .allocation-list {
@@ -1278,10 +1351,11 @@ td {
 
   .allocation-row {
     width: 100%;
-    grid-template-columns: 12px minmax(0, 1fr) 56px;
-    gap: 6px 8px;
-    padding: 8px 0;
+    grid-template-columns: 10px minmax(0, 1fr) 48px 88px;
+    gap: 6px;
+    padding: 5px 0;
     border-bottom: 1px solid rgba(213, 225, 223, 0.75);
+    font-size: 12px;
   }
 
   .allocation-row strong {
@@ -1290,10 +1364,11 @@ td {
   }
 
   .allocation-row span:last-child {
-    grid-column: 2 / 4;
-    justify-self: start;
+    grid-column: auto;
+    justify-self: end;
     font-weight: 800;
     color: var(--text);
+    text-align: right;
   }
 
   .pnl-calendar {
@@ -1316,6 +1391,19 @@ td {
   .form-title {
     align-items: flex-start;
     flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .panel-header h3,
+  .form-title h3 {
+    font-size: 16px;
+  }
+
+  .panel-header span,
+  .panel-copy {
+    font-size: 12px;
+    line-height: 1.35;
   }
 
   .panel-actions {
@@ -1329,20 +1417,54 @@ td {
 
   .mobile-list {
     display: grid;
-    gap: 12px;
+    gap: 9px;
   }
 
   .mobile-card {
-    padding: 13px 12px;
+    padding: 10px;
+    gap: 8px;
     background: linear-gradient(180deg, #ffffff 0%, #f8fbfa 100%);
   }
 
   .mobile-card dl {
-    gap: 9px 12px;
+    gap: 7px 10px;
   }
 
   .mobile-card-head strong {
+    font-size: 15px;
     overflow-wrap: anywhere;
+  }
+
+  .mobile-card-head span:not(.tag) {
+    font-size: 12px;
+  }
+
+  .mobile-card dt {
+    font-size: 11px;
+  }
+
+  .mobile-card dd {
+    font-size: 14px;
+  }
+
+  .row-actions {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .icon-action,
+  .ghost-button.small {
+    min-height: 32px;
+    padding: 0 10px;
+  }
+
+  .quote-box span {
+    min-height: 48px;
+    padding: 9px 10px;
+  }
+
+  .quote-box strong {
+    font-size: 16px;
   }
 }
 
@@ -1361,11 +1483,12 @@ td {
 
         <nav class="nav">
           <button class="nav-button active" data-view="dashboard">总览</button>
-          <button class="nav-button" data-view="trade-form">新增交易</button>
+          <button class="nav-button" data-view="close-snapshots">收盘</button>
+          <button class="nav-button" data-view="trade-form">交易</button>
           <button class="nav-button" data-view="positions">持仓</button>
-          <button class="nav-button" data-view="records">流水记录</button>
+          <button class="nav-button" data-view="records">流水</button>
           <button class="nav-button" data-view="performance-summary">总结</button>
-          <button class="nav-button" data-view="reports">复盘报表</button>
+          <button class="nav-button" data-view="reports">复盘</button>
           <button class="nav-button" data-view="settings">设置</button>
         </nav>
 
@@ -1508,6 +1631,41 @@ td {
           <section class="panel spacing-top">
             <div class="panel-header">
               <div>
+                <h3>各股匹配盈亏</h3>
+                <span>原来持仓不参与匹配，先卖后买显示负的未匹配数量</span>
+              </div>
+              <div class="date-filter">
+                <label>
+                  开始
+                  <input type="date" id="pair-start-date" />
+                </label>
+                <label>
+                  结束
+                  <input type="date" id="pair-end-date" />
+                </label>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>股票名称</th>
+                    <th>已匹配数量</th>
+                    <th>未匹配数量</th>
+                    <th>匹配实现盈亏</th>
+                  </tr>
+                </thead>
+                <tbody id="trade-pair-pnl-body"></tbody>
+              </table>
+            </div>
+            <div class="mobile-list" id="trade-pair-pnl-cards"></div>
+          </section>
+        </section>
+
+        <section class="view" id="close-snapshots">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
                 <h3>每日收盘记录</h3>
                 <span>收盘后保存当天资产快照，之后回看历史不受当前股价变化影响</span>
               </div>
@@ -1547,39 +1705,6 @@ td {
               </table>
             </div>
             <div class="mobile-list" id="close-snapshot-cards"></div>
-          </section>
-
-          <section class="panel spacing-top">
-            <div class="panel-header">
-              <div>
-                <h3>各股匹配盈亏</h3>
-                <span>原来持仓不参与匹配，先卖后买显示负的未匹配数量</span>
-              </div>
-              <div class="date-filter">
-                <label>
-                  开始
-                  <input type="date" id="pair-start-date" />
-                </label>
-                <label>
-                  结束
-                  <input type="date" id="pair-end-date" />
-                </label>
-              </div>
-            </div>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>股票名称</th>
-                    <th>已匹配数量</th>
-                    <th>未匹配数量</th>
-                    <th>匹配实现盈亏</th>
-                  </tr>
-                </thead>
-                <tbody id="trade-pair-pnl-body"></tbody>
-              </table>
-            </div>
-            <div class="mobile-list" id="trade-pair-pnl-cards"></div>
           </section>
         </section>
 
@@ -2367,6 +2492,7 @@ const els = {
 
 const titles = {
   dashboard: "总览",
+  "close-snapshots": "每日收盘记录",
   "trade-form": "新增交易",
   positions: "持仓",
   records: "流水记录",
