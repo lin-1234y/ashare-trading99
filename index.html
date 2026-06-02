@@ -2984,11 +2984,15 @@ function stockReportDates(symbol) {
   const key = normalizeSymbol(symbol);
   const current = calculatePortfolio().positions.find((position) => position.symbol === key);
   const matchDates = rangeMatchDetails("", "", key).map((match) => (match.buyDate > match.sellDate ? match.buyDate : match.sellDate));
+  const snapshotDates = state.closeSnapshots
+    .filter((snapshot) => (snapshot.positions || []).some((position) => normalizeSymbol(position.symbol) === key))
+    .map((snapshot) => snapshot.date);
   return [
     ...new Set([
       ...state.trades.filter((trade) => normalizeSymbol(trade.symbol) === key).map((trade) => trade.date),
       ...state.corporateActions.filter((action) => normalizeSymbol(action.symbol) === key).map((action) => action.date),
       ...matchDates,
+      ...snapshotDates,
       ...(current && current.quantity > 0 ? [today()] : []),
     ]),
   ]
@@ -3000,6 +3004,8 @@ function stockDayReport(symbol, date) {
   const key = normalizeSymbol(symbol);
   const trades = state.trades.filter((trade) => normalizeSymbol(trade.symbol) === key && trade.date === date);
   const actions = state.corporateActions.filter((action) => normalizeSymbol(action.symbol) === key && action.date === date);
+  const snapshot = state.closeSnapshots.find((item) => item.date === date);
+  const snapshotPosition = snapshot ? (snapshot.positions || []).find((position) => normalizeSymbol(position.symbol) === key) : null;
   const throughTrades = state.trades.filter((trade) => trade.date <= date);
   const position = calculatePortfolio(throughTrades).positions.find((item) => item.symbol === key);
   const dividends = actions.filter((action) => action.type === "dividend").reduce((sum, action) => sum + (Number(action.value) || 0), 0);
@@ -3007,7 +3013,7 @@ function stockDayReport(symbol, date) {
   const buyAmount = trades.filter((trade) => trade.side === "buy").reduce((sum, trade) => sum + tradeAmount(trade), 0);
   const sellAmount = trades.filter((trade) => trade.side === "sell").reduce((sum, trade) => sum + tradeAmount(trade), 0);
   const fees = trades.reduce((sum, trade) => sum + totalFee(trade), 0);
-  const totalPnl = position ? Number(position.dayPnl) || 0 : 0;
+  const totalPnl = snapshotPosition ? Number(snapshotPosition.dayPnl) || 0 : position ? Number(position.dayPnl) || 0 : 0;
 
   return {
     date,
