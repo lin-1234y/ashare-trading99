@@ -1,0 +1,4869 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>A股交易记录分析工具</title>
+    <meta name="theme-color" content="#10242d" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="A股交易" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <style>
+:root {
+  color-scheme: light;
+  --bg: #eef6f4;
+  --surface: #ffffff;
+  --surface-2: #edf5f2;
+  --text: #17202a;
+  --muted: #697586;
+  --line: #d5e1df;
+  --primary: #0f7c80;
+  --primary-strong: #0b5961;
+  --buy: #c9364b;
+  --sell: #0f8f68;
+  --warning: #c98212;
+  --gold: #d5a33f;
+  --ink: #0d2b33;
+  --shadow: 0 18px 45px rgba(26, 66, 78, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    linear-gradient(135deg, rgba(15, 124, 128, 0.12), transparent 28%),
+    linear-gradient(225deg, rgba(213, 163, 63, 0.16), transparent 35%),
+    var(--bg);
+  color: var(--text);
+  font-family:
+    Inter, "Microsoft YaHei", "PingFang SC", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: linear-gradient(180deg, #0d2b33 0%, #10242d 55%, #183943 100%);
+  color: #f7fbfd;
+  padding: 26px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: #f0c36a;
+  color: #10242d;
+  font-weight: 800;
+  font-size: 24px;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
+.brand p {
+  margin: 4px 0 0;
+  color: #a7bac3;
+  font-size: 13px;
+}
+
+.nav {
+  display: grid;
+  gap: 8px;
+}
+
+.nav-button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 8px;
+  text-align: left;
+  padding: 0 14px;
+  background: transparent;
+  color: #d8e4e9;
+}
+
+.nav-button:hover,
+.nav-button.active {
+  background: linear-gradient(135deg, #1b5960, #1b3945);
+  color: #ffffff;
+}
+
+.sidebar-card {
+  margin-top: auto;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-card span,
+.sidebar-card p {
+  color: #a7bac3;
+  font-size: 13px;
+}
+
+.sidebar-card strong {
+  display: block;
+  margin: 6px 0;
+}
+
+.backup-reminder {
+  display: none;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border: 1px solid #e8c16a;
+  border-radius: 8px;
+  background: #fff8e6;
+  color: #5f4310;
+  line-height: 1.5;
+}
+
+.backup-reminder.active {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.content {
+  padding: 28px;
+  overflow-x: hidden;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.topbar h2 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.topbar-actions,
+.form-actions,
+.stack-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.primary-button,
+.ghost-button,
+.danger-button,
+.file-button {
+  min-height: 40px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.primary-button {
+  background: linear-gradient(135deg, var(--primary), #15946f);
+  color: #ffffff;
+}
+
+.primary-button:hover {
+  background: var(--primary-strong);
+}
+
+.ghost-button {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--text);
+}
+
+.ghost-button.small {
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.danger-button {
+  background: #fff0ef;
+  border-color: #f3b7b2;
+  color: #b82824;
+}
+
+.save-status {
+  color: var(--sell);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.file-button {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--text);
+}
+
+.file-button input {
+  display: none;
+}
+
+.view {
+  display: none;
+}
+
+.view.active {
+  display: block;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.metric-grid.six {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.metric,
+.panel,
+.form-panel {
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdfc 100%);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.metric {
+  padding: 18px;
+  border-top: 3px solid rgba(15, 124, 128, 0.28);
+}
+
+.metric:nth-child(3n + 2) {
+  border-top-color: rgba(213, 163, 63, 0.55);
+}
+
+.metric:nth-child(3n) {
+  border-top-color: rgba(201, 54, 75, 0.28);
+}
+
+.metric span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.metric strong {
+  font-size: 24px;
+}
+
+.range-summary {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.range-summary .metric {
+  padding: 14px;
+  box-shadow: none;
+}
+
+.range-summary .metric strong {
+  font-size: 20px;
+}
+
+.panel-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 18px;
+}
+
+.panel {
+  padding: 18px;
+}
+
+.panel-header,
+.form-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.panel-header h3,
+.form-title h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.panel-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.panel-header > div h3 {
+  margin: 0 0 6px;
+}
+
+.panel-header span,
+.panel-copy {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.bar-chart {
+  display: grid;
+  gap: 12px;
+}
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 98px 1fr 96px;
+  gap: 10px;
+  align-items: center;
+  font-size: 14px;
+}
+
+.bar-track {
+  height: 12px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+}
+
+.bar-fill.loss {
+  background: var(--buy);
+}
+
+.allocation-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 18px;
+  align-items: center;
+}
+
+.pie-chart {
+  width: 210px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--surface-2);
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.pie-chart::after {
+  content: "";
+  position: absolute;
+  width: 58%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.pie-chart span {
+  position: relative;
+  z-index: 1;
+  max-width: 112px;
+  text-align: center;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.allocation-list {
+  display: grid;
+  gap: 10px;
+}
+
+.allocation-row {
+  display: grid;
+  grid-template-columns: 12px minmax(80px, 1fr) 58px 100px;
+  gap: 8px;
+  align-items: center;
+  font-size: 14px;
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.swatch.cash {
+  background: #7b8794;
+}
+
+.compact-table table {
+  min-width: 560px;
+}
+
+.equity-chart {
+  width: 100%;
+  min-height: 180px;
+  margin-bottom: 14px;
+}
+
+.equity-chart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.equity-grid {
+  fill: none;
+  stroke: #d9e1ea;
+  stroke-width: 2;
+}
+
+.equity-area {
+  fill: rgba(23, 107, 135, 0.14);
+}
+
+.equity-line {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.equity-dot {
+  fill: #ffffff;
+  stroke: var(--primary);
+  stroke-width: 3;
+}
+
+.equity-label {
+  fill: var(--text);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.pnl-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pnl-day {
+  min-height: 72px;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.calendar-weekday {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.pnl-day.empty {
+  background: transparent;
+  border-color: transparent;
+}
+
+.pnl-day.positive-day {
+  border-color: rgba(194, 59, 66, 0.32);
+  background: #fff3f3;
+}
+
+.pnl-day.negative-day {
+  border-color: rgba(24, 128, 95, 0.32);
+  background: #effaf5;
+}
+
+.pnl-day strong {
+  font-size: 13px;
+}
+
+.pnl-day time {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.pnl-day span {
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.pnl-day small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.stock-report-day {
+  min-height: 106px;
+}
+
+.subtle-detail {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.timeline-list {
+  display: grid;
+  gap: 10px;
+}
+
+.timeline-item {
+  display: grid;
+  grid-template-columns: 92px 74px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+
+.timeline-item strong {
+  font-size: 14px;
+}
+
+.timeline-item p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.detail-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.detail-hero h3 {
+  margin: 0 0 6px;
+  font-size: 22px;
+}
+
+.detail-hero p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.compare-card {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+
+.compare-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.compare-card strong {
+  font-size: 22px;
+}
+
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.summary-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.segmented-control {
+  display: inline-grid;
+  grid-auto-flow: column;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+
+.segmented-control button {
+  min-width: 44px;
+  min-height: 34px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.segmented-control button.active {
+  background: linear-gradient(135deg, #1b5960, #1b3945);
+  color: #ffffff;
+}
+
+.insight-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.insight-list li {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: #26333d;
+  line-height: 1.55;
+}
+
+.form-panel {
+  padding: 20px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.form-grid.compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+label {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.wide {
+  grid-column: span 3;
+}
+
+input,
+select {
+  width: 100%;
+  min-height: 42px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #ffffff;
+  color: var(--text);
+  padding: 0 12px;
+  outline: none;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(23, 107, 135, 0.14);
+}
+
+.quote-box {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.quote-box span {
+  min-height: 58px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--muted);
+  display: grid;
+  gap: 4px;
+}
+
+.quote-box strong {
+  color: var(--text);
+  font-size: 18px;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.mobile-list {
+  display: none;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1040px;
+}
+
+th,
+td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+th {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  background: #f8fafc;
+}
+
+td {
+  font-size: 14px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.tag.buy {
+  color: var(--buy);
+  background: #fff0ef;
+}
+
+.tag.sell {
+  color: var(--sell);
+  background: #eaf8f2;
+}
+
+.positive {
+  color: var(--sell);
+  font-weight: 700;
+}
+
+.negative {
+  color: var(--buy);
+  font-weight: 700;
+}
+
+.row-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-action {
+  min-height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #ffffff;
+  padding: 0 10px;
+}
+
+.search-box {
+  grid-template-columns: auto minmax(180px, 260px);
+  align-items: center;
+}
+
+.date-filter {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(140px, 1fr));
+  gap: 10px;
+  min-width: 300px;
+}
+
+.date-filter label {
+  gap: 6px;
+}
+
+.date-filter input {
+  min-height: 36px;
+}
+
+.current-price-input {
+  width: 112px;
+  min-height: 34px;
+}
+
+.empty-state {
+  padding: 26px 12px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.mobile-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.mobile-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mobile-card-head strong {
+  font-size: 16px;
+}
+
+.mobile-card-head span:not(.tag) {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.mobile-card dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+}
+
+.mobile-card dl div {
+  min-width: 0;
+}
+
+.mobile-card dt {
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.mobile-card dd {
+  margin: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.mobile-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.mobile-price {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  align-items: center;
+}
+
+.danger-zone {
+  border-color: #f3c5c1;
+}
+
+.spacing-top {
+  margin-top: 18px;
+}
+
+@media (max-width: 980px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+  }
+
+  .nav {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .nav-button {
+    text-align: center;
+    padding: 0 8px;
+  }
+
+  .metric-grid,
+  .panel-grid,
+  .form-grid,
+  .form-grid.compact,
+  .quote-box,
+  .date-filter {
+    grid-template-columns: 1fr;
+  }
+
+  .date-filter {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .wide {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 620px) {
+  body {
+    padding-bottom: 168px;
+  }
+
+  input,
+  select {
+    font-size: 16px;
+  }
+
+  .content {
+    padding: 12px 10px 172px;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .topbar h2 {
+    font-size: 22px;
+  }
+
+  .nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+    background: rgba(13, 43, 51, 0.98);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .nav-button {
+    min-height: 38px;
+    padding: 0 6px;
+    font-size: 12px;
+    border-radius: 8px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .sidebar {
+    padding: 18px 14px 12px;
+    gap: 16px;
+  }
+
+  .sidebar-card {
+    display: none;
+  }
+
+  .brand-mark {
+    width: 38px;
+    height: 38px;
+  }
+
+  .brand h1 {
+    font-size: 16px;
+  }
+
+  .topbar-actions {
+    width: 100%;
+  }
+
+  .topbar-actions button {
+    flex: 1;
+  }
+
+  .metric strong {
+    font-size: 17px;
+  }
+
+  .metric {
+    min-height: 68px;
+    padding: 11px 12px;
+    display: grid;
+    align-content: center;
+    gap: 4px;
+  }
+
+  .metric-grid.six {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .range-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .metric span {
+    margin-bottom: 0;
+    font-size: 12px;
+  }
+
+  .metric strong {
+    overflow-wrap: anywhere;
+  }
+
+  .panel,
+  .form-panel {
+    padding: 14px 12px;
+  }
+
+  .timeline-item {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-hero {
+    flex-direction: column;
+  }
+
+  .compare-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .report-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-toolbar {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .segmented-control,
+  .summary-toolbar .search-box {
+    width: 100%;
+  }
+
+  .segmented-control {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-auto-flow: row;
+  }
+
+  .allocation-layout {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 12px;
+  }
+
+  .pie-chart {
+    width: min(68vw, 210px);
+  }
+
+  .pie-chart span {
+    max-width: 94px;
+    font-size: 14px;
+  }
+
+  .allocation-list {
+    width: 100%;
+  }
+
+  .allocation-row {
+    width: 100%;
+    grid-template-columns: 12px minmax(0, 1fr) 56px;
+    gap: 6px 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(213, 225, 223, 0.75);
+  }
+
+  .allocation-row strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .allocation-row span:last-child {
+    grid-column: 2 / 4;
+    justify-self: start;
+    font-weight: 800;
+    color: var(--text);
+  }
+
+  .pnl-calendar {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .pnl-day {
+    min-height: 56px;
+    padding: 6px 4px;
+  }
+
+  .pnl-day strong,
+  .pnl-day span,
+  .calendar-weekday {
+    font-size: 11px;
+  }
+
+  .panel-header,
+  .form-title {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .panel-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .table-wrap {
+    display: none;
+  }
+
+  .mobile-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .mobile-card {
+    padding: 13px 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbfa 100%);
+  }
+
+  .mobile-card dl {
+    gap: 9px 12px;
+  }
+
+  .mobile-card-head strong {
+    overflow-wrap: anywhere;
+  }
+}
+
+</style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark">A</span>
+          <div>
+            <h1>A股交易分析</h1>
+            <p>手动记账 · 匹配复盘</p>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-button active" data-view="dashboard">总览</button>
+          <button class="nav-button" data-view="trade-form">新增交易</button>
+          <button class="nav-button" data-view="positions">持仓</button>
+          <button class="nav-button" data-view="records">流水记录</button>
+          <button class="nav-button" data-view="performance-summary">总结</button>
+          <button class="nav-button" data-view="reports">复盘报表</button>
+          <button class="nav-button" data-view="settings">设置</button>
+        </nav>
+
+        <div class="sidebar-card">
+          <span>核算规则</span>
+          <strong>最近原则匹配</strong>
+          <p>费用按设置自动计算，原来持仓不参与匹配盈亏。</p>
+        </div>
+      </aside>
+
+      <main class="content">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Trading Journal</p>
+            <h2 id="page-title">总览</h2>
+          </div>
+          <div class="topbar-actions">
+            <button class="ghost-button" id="sample-data">填充示例</button>
+            <button class="primary-button" data-jump="trade-form">新增交易</button>
+          </div>
+        </header>
+
+        <section class="view active" id="dashboard">
+          <section class="backup-reminder" id="backup-reminder">
+            <span id="backup-reminder-text">建议导出备份，防止浏览器数据丢失。</span>
+            <button class="ghost-button small" data-jump="settings" type="button">去备份</button>
+          </section>
+
+          <div class="metric-grid six">
+            <article class="metric">
+              <span>总资产</span>
+              <strong id="metric-assets">¥0.00</strong>
+            </article>
+            <article class="metric">
+              <span>总收益率</span>
+              <strong id="metric-total-return">0.00%</strong>
+            </article>
+            <article class="metric">
+              <span>现金</span>
+              <strong id="metric-cash">¥0.00</strong>
+            </article>
+            <article class="metric">
+              <span>持仓市值</span>
+              <strong id="metric-market-value">¥0.00</strong>
+            </article>
+            <article class="metric">
+              <span>原始资产</span>
+              <strong id="metric-cost">¥0.00</strong>
+            </article>
+            <article class="metric">
+              <span>总盈亏</span>
+              <strong id="metric-floating">¥0.00</strong>
+            </article>
+            <article class="metric">
+              <span>当日盈亏</span>
+              <strong id="metric-day-pnl">¥0.00</strong>
+            </article>
+            <article class="metric">
+              <span>本月盈亏</span>
+              <strong id="metric-month-pnl">¥0.00</strong>
+            </article>
+            <article class="metric">
+              <span>本年盈亏</span>
+              <strong id="metric-year-pnl">¥0.00</strong>
+            </article>
+            <article class="metric">
+              <span>匹配实现盈亏</span>
+              <strong id="metric-matched-realized">¥0.00</strong>
+            </article>
+            <article class="metric">
+              <span>手续总费</span>
+              <strong id="metric-total-fees">¥0.00</strong>
+            </article>
+            <article class="metric">
+              <span>累计分红</span>
+              <strong id="metric-dividends">¥0.00</strong>
+            </article>
+          </div>
+
+          <div class="panel-grid">
+            <section class="panel">
+              <div class="panel-header">
+                <h3>各股仓位</h3>
+                <span id="summary-count">0 笔交易</span>
+              </div>
+              <div class="allocation-layout">
+                <div class="pie-chart" id="allocation-pie"></div>
+                <div class="allocation-list" id="allocation-list"></div>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <h3>阶段盈亏日历</h3>
+                <label class="search-box">
+                  <span>年月</span>
+                  <input type="month" id="calendar-month" />
+                </label>
+              </div>
+              <div class="equity-chart" id="equity-chart"></div>
+              <div class="table-wrap compact-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>日期</th>
+                      <th>当日盈亏</th>
+                      <th>累计盈亏</th>
+                      <th>总资产</th>
+                    </tr>
+                  </thead>
+                  <tbody id="equity-curve-body"></tbody>
+                </table>
+              </div>
+              <div class="mobile-list" id="equity-curve-cards"></div>
+            </section>
+          </div>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <div>
+                <h3>任意区间盈亏</h3>
+                <span>选择开始和结束日期，统计这段时间的阶段盈亏</span>
+              </div>
+              <div class="date-filter">
+                <label>
+                  开始
+                  <input type="date" id="range-start-date" />
+                </label>
+                <label>
+                  结束
+                  <input type="date" id="range-end-date" />
+                </label>
+              </div>
+            </div>
+            <div class="range-summary" id="range-summary"></div>
+          </section>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <div>
+                <h3>各股匹配盈亏</h3>
+                <span>原来持仓不参与匹配，先卖后买显示负的未匹配数量</span>
+              </div>
+              <div class="date-filter">
+                <label>
+                  开始
+                  <input type="date" id="pair-start-date" />
+                </label>
+                <label>
+                  结束
+                  <input type="date" id="pair-end-date" />
+                </label>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>股票名称</th>
+                    <th>已匹配数量</th>
+                    <th>未匹配数量</th>
+                    <th>匹配实现盈亏</th>
+                  </tr>
+                </thead>
+                <tbody id="trade-pair-pnl-body"></tbody>
+              </table>
+            </div>
+            <div class="mobile-list" id="trade-pair-pnl-cards"></div>
+          </section>
+        </section>
+
+        <section class="view" id="performance-summary">
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <div>
+                <h3>投资表现总结</h3>
+                <span>先看整体账户，再看个股贡献与问题</span>
+              </div>
+              <div class="summary-toolbar">
+                <div class="segmented-control" id="summary-kind-tabs">
+                  <button class="active" data-summary-kind="week" type="button">周</button>
+                  <button data-summary-kind="month" type="button">月</button>
+                  <button data-summary-kind="quarter" type="button">季</button>
+                  <button data-summary-kind="year" type="button">年</button>
+                </div>
+                <label class="search-box">
+                  <span>周期</span>
+                  <select id="summary-period"></select>
+                </label>
+              </div>
+            </div>
+            <div class="metric-grid six" id="summary-overall-metrics"></div>
+          </section>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <h3>整体智能分析</h3>
+            </div>
+            <ul class="insight-list" id="summary-overall-insights"></ul>
+          </section>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <div>
+                <h3>个股表现排行</h3>
+                <span>显示周期内有记录或当前仍持仓的股票</span>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>股票</th>
+                    <th>总盈亏</th>
+                    <th>匹配实现</th>
+                    <th>分红</th>
+                    <th>手续费</th>
+                    <th>交易</th>
+                    <th>胜率</th>
+                    <th>仓位占比</th>
+                  </tr>
+                </thead>
+                <tbody id="summary-stock-body"></tbody>
+              </table>
+            </div>
+            <div class="mobile-list" id="summary-stock-cards"></div>
+          </section>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <h3>个股智能分析</h3>
+            </div>
+            <ul class="insight-list" id="summary-stock-insights"></ul>
+          </section>
+        </section>
+
+        <section class="view" id="reports">
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <div>
+                <h3>个股交易时间线</h3>
+                <span>查看某只股票的初始持仓、买卖、分红与送股记录</span>
+              </div>
+              <label class="search-box">
+                <span>股票</span>
+                <select id="timeline-symbol"></select>
+              </label>
+              <button class="ghost-button small" id="open-timeline-detail" type="button">打开详情</button>
+            </div>
+            <div class="timeline-list" id="stock-timeline"></div>
+          </section>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <div>
+                <h3>个股盈亏日历</h3>
+                <span>按个股记录每日盈亏、匹配实现盈亏和成交额</span>
+              </div>
+              <div class="date-filter">
+                <label>
+                  股票
+                  <select id="report-symbol"></select>
+                </label>
+                <label>
+                  月份
+                  <input type="month" id="report-month" />
+                </label>
+              </div>
+            </div>
+            <div class="metric-grid six" id="report-summary-metrics"></div>
+            <div class="equity-chart" id="report-calendar"></div>
+            <div class="table-wrap compact-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>当日盈亏</th>
+                    <th>匹配实现</th>
+                    <th>成交额</th>
+                    <th>买入</th>
+                    <th>卖出</th>
+                    <th>手续费</th>
+                  </tr>
+                </thead>
+                <tbody id="report-daily-body"></tbody>
+              </table>
+            </div>
+            <div class="mobile-list" id="report-daily-cards"></div>
+          </section>
+        </section>
+
+        <section class="view" id="trade-form">
+          <form class="form-panel" id="trade-entry-form">
+            <input type="hidden" id="editing-id" />
+            <div class="form-title">
+              <h3 id="form-heading">新增交易</h3>
+              <button type="button" class="ghost-button small" id="reset-form">清空</button>
+            </div>
+
+            <div class="form-grid">
+              <label>
+                交易日期
+                <input type="date" id="trade-date" required />
+              </label>
+              <label>
+                证券代码
+                <input type="text" id="symbol" placeholder="例如 600519" required maxlength="12" />
+              </label>
+              <label>
+                证券名称
+                <input type="text" id="name" placeholder="例如 贵州茅台" required />
+              </label>
+              <label>
+                买卖方向
+                <select id="side" required>
+                  <option value="buy">买入</option>
+                  <option value="sell">卖出</option>
+                </select>
+              </label>
+              <label>
+                成交价格
+                <input type="number" id="price" min="0" step="0.001" required />
+              </label>
+              <label>
+                成交数量
+                <input type="number" id="quantity" min="1" step="1" required />
+              </label>
+              <label>
+                佣金（自动）
+                <input type="number" id="commission" readonly />
+              </label>
+              <label>
+                印花税（自动）
+                <input type="number" id="stamp-tax" readonly />
+              </label>
+              <label>
+                过户费（自动）
+                <input type="number" id="transfer-fee" readonly />
+              </label>
+              <label class="wide">
+                备注
+                <input type="text" id="note" placeholder="例如 突破买入、止损卖出、计划外交易" />
+              </label>
+            </div>
+
+            <div class="quote-box">
+              <span>成交金额 <strong id="preview-amount">¥0.00</strong></span>
+              <span>总费用 <strong id="preview-fee">¥0.00</strong></span>
+              <span>现金变化 <strong id="preview-net">¥0.00</strong></span>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="primary-button" id="save-trade">保存交易</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="view" id="positions">
+          <section class="panel">
+            <div class="panel-header">
+              <h3>当前持仓</h3>
+              <div class="panel-actions">
+                <span id="quote-status">当前价可手动修改</span>
+                <button class="ghost-button small" id="refresh-quotes" type="button">更新股价</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>代码</th>
+                    <th>名称</th>
+                    <th>数量</th>
+                    <th>原始成本</th>
+                    <th>现在成本</th>
+                    <th>当前价</th>
+                    <th>市值</th>
+                    <th>当日盈亏</th>
+                    <th>收益率</th>
+                    <th>匹配实现</th>
+                    <th>总盈亏</th>
+                    <th>详情</th>
+                  </tr>
+                </thead>
+                <tbody id="positions-body"></tbody>
+              </table>
+            </div>
+            <div class="mobile-list" id="positions-cards"></div>
+          </section>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <div>
+                <h3>已清仓 / 历史持仓</h3>
+                <span>股数为 0 的股票仍保留复盘数据</span>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>代码</th>
+                    <th>名称</th>
+                    <th>清仓日期</th>
+                    <th>持有天数</th>
+                    <th>实现盈亏</th>
+                    <th>分红</th>
+                    <th>总费用</th>
+                    <th>最终盈亏</th>
+                    <th>详情</th>
+                  </tr>
+                </thead>
+                <tbody id="closed-positions-body"></tbody>
+              </table>
+            </div>
+            <div class="mobile-list" id="closed-positions-cards"></div>
+          </section>
+        </section>
+
+        <section class="view" id="stock-detail">
+          <section class="panel">
+            <div class="detail-hero">
+              <div>
+                <h3 id="detail-title">个股详情</h3>
+                <p id="detail-subtitle">当前持仓、已清仓总结与低买高卖效果</p>
+              </div>
+              <div class="panel-actions">
+                <button class="ghost-button small" data-jump="positions" type="button">返回持仓</button>
+                <button class="ghost-button small" data-jump="reports" type="button">返回复盘</button>
+              </div>
+            </div>
+            <div class="metric-grid six" id="detail-metrics"></div>
+          </section>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <div>
+                <h3>持股不动 vs 低买高卖</h3>
+                <span>低买高卖按匹配规则统计，原始持仓不参与匹配</span>
+              </div>
+            </div>
+            <div class="compare-grid" id="detail-compare"></div>
+          </section>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <h3>未匹配明细</h3>
+            </div>
+            <div id="detail-unmatched"></div>
+          </section>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <h3>匹配明细</h3>
+            </div>
+            <div class="timeline-list" id="detail-matches"></div>
+          </section>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <h3>完整时间线</h3>
+            </div>
+            <div class="timeline-list" id="detail-timeline"></div>
+          </section>
+        </section>
+
+        <section class="view" id="records">
+          <section class="panel">
+            <div class="panel-header">
+              <h3>流水记录</h3>
+              <label class="search-box">
+                <span>筛选</span>
+                <input type="search" id="record-filter" placeholder="代码 / 名称 / 类型 / 备注" />
+              </label>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>代码</th>
+                    <th>名称</th>
+                    <th>类型</th>
+                    <th>价格</th>
+                    <th>数量</th>
+                    <th>金额</th>
+                    <th>佣金</th>
+                    <th>印花税</th>
+                    <th>过户费</th>
+                    <th>备注</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="records-body"></tbody>
+              </table>
+            </div>
+            <div class="mobile-list" id="records-cards"></div>
+          </section>
+        </section>
+
+        <section class="view" id="settings">
+          <div class="panel-grid">
+            <section class="panel">
+              <div class="panel-header">
+                <h3>账户初始值</h3>
+              </div>
+              <div class="form-grid compact">
+                <label>
+                  初始现金
+                  <input type="number" id="initial-cash" min="0" step="0.01" />
+                </label>
+              </div>
+              <div class="form-actions">
+                <button class="primary-button" id="save-account" type="button">保存账户设置</button>
+                <span class="save-status" id="account-save-status"></span>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <h3>费用设置</h3>
+                <span>费率按成交金额计算，例如万2.5填 0.00025</span>
+              </div>
+              <div class="form-grid compact">
+                <label>
+                  佣金费率
+                  <input type="number" id="commission-rate" min="0" step="0.00001" />
+                </label>
+                <label>
+                  最低佣金
+                  <input type="number" id="min-commission" min="0" step="0.01" />
+                </label>
+                <label>
+                  印花税率（仅卖出）
+                  <input type="number" id="stamp-rate" min="0" step="0.00001" />
+                </label>
+                <label>
+                  过户费率
+                  <input type="number" id="transfer-rate" min="0" step="0.00001" />
+                </label>
+              </div>
+              <div class="form-actions">
+                <button class="primary-button" id="save-fees" type="button">保存费用设置</button>
+              </div>
+            </section>
+          </div>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <h3>初始持仓</h3>
+              <span id="initial-position-mode">用于录入开始使用工具之前已经持有的股票</span>
+            </div>
+            <input type="hidden" id="editing-initial-id" />
+            <div class="form-grid">
+              <label>
+                代码
+                <input type="text" id="initial-symbol" maxlength="12" placeholder="例如 600519" />
+              </label>
+              <label>
+                名称
+                <input type="text" id="initial-name" placeholder="例如 贵州茅台" />
+              </label>
+              <label>
+                数量
+                <input type="number" id="initial-quantity" min="1" step="1" />
+              </label>
+              <label>
+                总成本
+                <input type="number" id="initial-cost" min="0" step="0.01" />
+              </label>
+              <label>
+                当前价
+                <input type="number" id="initial-price" min="0" step="0.001" />
+              </label>
+              <label>
+                建仓日期
+                <input type="date" id="initial-date" />
+              </label>
+            </div>
+            <div class="form-actions">
+              <button class="primary-button" id="add-initial-position" type="button">添加初始持仓</button>
+              <button class="ghost-button" id="reset-initial-position" type="button">清空</button>
+              <button class="danger-button" id="clear-initial-positions" type="button">清空全部初始持仓</button>
+            </div>
+            <div class="table-wrap spacing-top">
+              <table>
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>代码</th>
+                    <th>名称</th>
+                    <th>数量</th>
+                    <th>总成本</th>
+                    <th>平均成本</th>
+                    <th>当前价</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="initial-positions-body"></tbody>
+              </table>
+            </div>
+            <div class="mobile-list" id="initial-positions-cards"></div>
+          </section>
+
+          <section class="panel spacing-top">
+            <div class="panel-header">
+              <h3>分红与送股/转增</h3>
+              <span>现金分红增加现金；送股/转增增加数量且不增加成本</span>
+            </div>
+            <div class="form-grid">
+              <label>
+                日期
+                <input type="date" id="action-date" />
+              </label>
+              <label>
+                代码
+                <input type="text" id="action-symbol" maxlength="12" placeholder="例如 600519" />
+              </label>
+              <label>
+                名称
+                <input type="text" id="action-name" placeholder="例如 贵州茅台" />
+              </label>
+              <label>
+                类型
+                <select id="action-type">
+                  <option value="dividend">现金分红</option>
+                  <option value="bonus">送股/转增</option>
+                </select>
+              </label>
+              <label>
+                金额或数量
+                <input type="number" id="action-value" min="0" step="0.001" />
+              </label>
+              <label>
+                备注
+                <input type="text" id="action-note" placeholder="例如 10派3、10送2" />
+              </label>
+            </div>
+            <div class="form-actions">
+              <button class="primary-button" id="add-corporate-action" type="button">添加公司行为</button>
+            </div>
+            <div class="table-wrap spacing-top">
+              <table>
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>代码</th>
+                    <th>名称</th>
+                    <th>类型</th>
+                    <th>金额/数量</th>
+                    <th>备注</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="corporate-actions-body"></tbody>
+              </table>
+            </div>
+            <div class="mobile-list" id="corporate-actions-cards"></div>
+          </section>
+
+          <div class="panel-grid spacing-top">
+            <section class="panel">
+              <div class="panel-header">
+                <h3>数据导出</h3>
+              </div>
+              <p class="panel-copy">导出 JSON 后可以作为备份，换浏览器或换电脑时再导入。</p>
+              <p class="panel-copy" id="backup-status">还没有备份记录。</p>
+              <div class="stack-actions">
+                <button class="primary-button" id="export-data">导出备份</button>
+                <button class="ghost-button" id="export-csv" type="button">导出CSV</button>
+                <label class="file-button">
+                  导入数据
+                  <input type="file" id="import-data" accept="application/json" />
+                </label>
+              </div>
+            </section>
+
+            <section class="panel danger-zone">
+              <div class="panel-header">
+                <h3>清空数据</h3>
+              </div>
+              <p class="panel-copy">会删除当前浏览器里保存的所有交易、初始持仓、现金和当前价。</p>
+              <button class="danger-button" id="clear-data">清空全部</button>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script>
+const STORAGE_KEY = "ashare-trading-journal";
+
+const defaultSettings = {
+  initialCash: 0,
+  commissionRate: 0.00025,
+  minCommission: 5,
+  stampRate: 0.0005,
+  transferRate: 0.00001,
+  lastBackupAt: "",
+};
+
+const state = {
+  trades: [],
+  prices: {},
+  previousCloses: {},
+  initialPositions: [],
+  corporateActions: [],
+  settings: { ...defaultSettings },
+};
+let selectedDetailSymbol = "";
+let summaryPeriodKind = "week";
+
+function optionalElement(selector) {
+  return (
+    document.querySelector(selector) || {
+      value: "",
+      textContent: "",
+      innerHTML: "",
+      className: "",
+      addEventListener() {},
+    }
+  );
+}
+
+function uid() {
+  if (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+  return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+const els = {
+  navButtons: document.querySelectorAll(".nav-button"),
+  views: document.querySelectorAll(".view"),
+  pageTitle: document.querySelector("#page-title"),
+  form: document.querySelector("#trade-entry-form"),
+  editingId: document.querySelector("#editing-id"),
+  tradeDate: document.querySelector("#trade-date"),
+  symbol: document.querySelector("#symbol"),
+  name: document.querySelector("#name"),
+  side: document.querySelector("#side"),
+  price: document.querySelector("#price"),
+  quantity: document.querySelector("#quantity"),
+  commission: document.querySelector("#commission"),
+  stampTax: document.querySelector("#stamp-tax"),
+  transferFee: document.querySelector("#transfer-fee"),
+  note: document.querySelector("#note"),
+  formHeading: document.querySelector("#form-heading"),
+  previewAmount: document.querySelector("#preview-amount"),
+  previewFee: document.querySelector("#preview-fee"),
+  previewNet: document.querySelector("#preview-net"),
+  recordsBody: document.querySelector("#records-body"),
+  recordsCards: optionalElement("#records-cards"),
+  positionsBody: document.querySelector("#positions-body"),
+  positionsCards: optionalElement("#positions-cards"),
+  closedPositionsBody: optionalElement("#closed-positions-body"),
+  closedPositionsCards: optionalElement("#closed-positions-cards"),
+  quoteStatus: optionalElement("#quote-status"),
+  recordFilter: document.querySelector("#record-filter"),
+  summaryCount: document.querySelector("#summary-count"),
+  allocationPie: optionalElement("#allocation-pie"),
+  allocationList: optionalElement("#allocation-list"),
+  equityChart: optionalElement("#equity-chart"),
+  equityCurveBody: optionalElement("#equity-curve-body"),
+  equityCurveCards: optionalElement("#equity-curve-cards"),
+  calendarMonth: optionalElement("#calendar-month"),
+  rangeStartDate: optionalElement("#range-start-date"),
+  rangeEndDate: optionalElement("#range-end-date"),
+  rangeSummary: optionalElement("#range-summary"),
+  backupReminder: optionalElement("#backup-reminder"),
+  backupReminderText: optionalElement("#backup-reminder-text"),
+  assets: document.querySelector("#metric-assets"),
+  totalReturn: optionalElement("#metric-total-return"),
+  cash: document.querySelector("#metric-cash"),
+  marketValue: document.querySelector("#metric-market-value"),
+  cost: document.querySelector("#metric-cost"),
+  unrealized: optionalElement("#metric-unrealized"),
+  floating: document.querySelector("#metric-floating"),
+  dayPnl: optionalElement("#metric-day-pnl"),
+  monthPnl: optionalElement("#metric-month-pnl"),
+  yearPnl: optionalElement("#metric-year-pnl"),
+  realized: optionalElement("#metric-realized"),
+  matchedRealized: optionalElement("#metric-matched-realized"),
+  totalFees: optionalElement("#metric-total-fees"),
+  dividends: optionalElement("#metric-dividends"),
+  tradePairPnlBody: document.querySelector("#trade-pair-pnl-body"),
+  tradePairPnlCards: optionalElement("#trade-pair-pnl-cards"),
+  pairStartDate: optionalElement("#pair-start-date"),
+  pairEndDate: optionalElement("#pair-end-date"),
+  timelineSymbol: optionalElement("#timeline-symbol"),
+  stockTimeline: optionalElement("#stock-timeline"),
+  reportSymbol: optionalElement("#report-symbol"),
+  reportMonth: optionalElement("#report-month"),
+  reportSummaryMetrics: optionalElement("#report-summary-metrics"),
+  reportCalendar: optionalElement("#report-calendar"),
+  reportDailyBody: optionalElement("#report-daily-body"),
+  reportDailyCards: optionalElement("#report-daily-cards"),
+  summaryKindButtons: document.querySelectorAll("[data-summary-kind]"),
+  summaryPeriod: optionalElement("#summary-period"),
+  summaryOverallMetrics: optionalElement("#summary-overall-metrics"),
+  summaryOverallInsights: optionalElement("#summary-overall-insights"),
+  summaryStockBody: optionalElement("#summary-stock-body"),
+  summaryStockCards: optionalElement("#summary-stock-cards"),
+  summaryStockInsights: optionalElement("#summary-stock-insights"),
+  openTimelineDetail: optionalElement("#open-timeline-detail"),
+  detailTitle: optionalElement("#detail-title"),
+  detailSubtitle: optionalElement("#detail-subtitle"),
+  detailMetrics: optionalElement("#detail-metrics"),
+  detailCompare: optionalElement("#detail-compare"),
+  detailUnmatched: optionalElement("#detail-unmatched"),
+  detailMatches: optionalElement("#detail-matches"),
+  detailTimeline: optionalElement("#detail-timeline"),
+  initialCash: document.querySelector("#initial-cash"),
+  accountSaveStatus: optionalElement("#account-save-status"),
+  commissionRate: document.querySelector("#commission-rate"),
+  minCommission: document.querySelector("#min-commission"),
+  stampRate: document.querySelector("#stamp-rate"),
+  transferRate: document.querySelector("#transfer-rate"),
+  initialSymbol: document.querySelector("#initial-symbol"),
+  editingInitialId: optionalElement("#editing-initial-id"),
+  initialPositionMode: optionalElement("#initial-position-mode"),
+  initialName: document.querySelector("#initial-name"),
+  initialQuantity: document.querySelector("#initial-quantity"),
+  initialCost: document.querySelector("#initial-cost"),
+  initialPrice: document.querySelector("#initial-price"),
+  initialDate: document.querySelector("#initial-date"),
+  initialPositionsBody: document.querySelector("#initial-positions-body"),
+  initialPositionsCards: optionalElement("#initial-positions-cards"),
+  actionDate: optionalElement("#action-date"),
+  actionSymbol: optionalElement("#action-symbol"),
+  actionName: optionalElement("#action-name"),
+  actionType: optionalElement("#action-type"),
+  actionValue: optionalElement("#action-value"),
+  actionNote: optionalElement("#action-note"),
+  corporateActionsBody: optionalElement("#corporate-actions-body"),
+  corporateActionsCards: optionalElement("#corporate-actions-cards"),
+  backupStatus: optionalElement("#backup-status"),
+};
+
+const titles = {
+  dashboard: "总览",
+  "trade-form": "新增交易",
+  positions: "持仓",
+  records: "流水记录",
+  "performance-summary": "投资总结",
+  reports: "复盘报表",
+  "stock-detail": "个股详情",
+  settings: "设置",
+};
+
+function money(value) {
+  return new Intl.NumberFormat("zh-CN", {
+    style: "currency",
+    currency: "CNY",
+    minimumFractionDigits: 2,
+  }).format(Number(value) || 0);
+}
+
+function number(value, digits = 2) {
+  return new Intl.NumberFormat("zh-CN", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(Number(value) || 0);
+}
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function currentMonthKey() {
+  return today().slice(0, 7);
+}
+
+function monthStartDate(monthKey = currentMonthKey()) {
+  return `${monthKey}-01`;
+}
+
+function monthEndDate(monthKey = currentMonthKey()) {
+  const [year, month] = monthKey.split("-").map(Number);
+  return `${monthKey}-${String(new Date(year, month, 0).getDate()).padStart(2, "0")}`;
+}
+
+function validDateString(date) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(date || ""));
+}
+
+function dateRangeBounds(startDate = "", endDate = "") {
+  const start = validDateString(startDate) ? startDate : "";
+  const end = validDateString(endDate) ? endDate : "";
+  if (start && end && start > end) {
+    return { startDate: end, endDate: start };
+  }
+  return { startDate: start, endDate: end };
+}
+
+function dateInRange(date, startDate = "", endDate = "") {
+  if (!validDateString(date)) return false;
+  const range = dateRangeBounds(startDate, endDate);
+  if (range.startDate && date < range.startDate) return false;
+  if (range.endDate && date > range.endDate) return false;
+  return true;
+}
+
+function localDate(dateString) {
+  const [year, month, day] = String(dateString || today()).split("-").map(Number);
+  return new Date(year, (month || 1) - 1, day || 1);
+}
+
+function formatDate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function addDays(dateString, days) {
+  const date = localDate(dateString);
+  date.setDate(date.getDate() + days);
+  return formatDate(date);
+}
+
+function isoWeekInfo(dateString) {
+  const date = localDate(dateString);
+  const day = (date.getDay() + 6) % 7;
+  const thursday = new Date(date);
+  thursday.setDate(date.getDate() - day + 3);
+  const year = thursday.getFullYear();
+  const firstThursday = new Date(year, 0, 4);
+  const firstDay = (firstThursday.getDay() + 6) % 7;
+  firstThursday.setDate(firstThursday.getDate() - firstDay + 3);
+  const week = 1 + Math.round((thursday - firstThursday) / 604800000);
+  return { year, week };
+}
+
+function periodKeyForDate(kind, dateString) {
+  if (!validDateString(dateString)) return "";
+  const date = localDate(dateString);
+  if (kind === "week") {
+    const info = isoWeekInfo(dateString);
+    return `${info.year}-W${String(info.week).padStart(2, "0")}`;
+  }
+  if (kind === "quarter") return `${date.getFullYear()}-Q${Math.floor(date.getMonth() / 3) + 1}`;
+  if (kind === "year") return String(date.getFullYear());
+  return dateString.slice(0, 7);
+}
+
+function periodBounds(kind, key) {
+  if (kind === "week") {
+    const [yearPart, weekPart] = String(key || "").split("-W");
+    const year = Number(yearPart);
+    const week = Number(weekPart);
+    const jan4 = new Date(year, 0, 4);
+    const jan4Day = (jan4.getDay() + 6) % 7;
+    const start = new Date(jan4);
+    start.setDate(jan4.getDate() - jan4Day + (week - 1) * 7);
+    const startDate = formatDate(start);
+    return { startDate, endDate: addDays(startDate, 6) };
+  }
+  if (kind === "quarter") {
+    const [yearPart, quarterPart] = String(key || "").split("-Q");
+    const year = Number(yearPart);
+    const quarter = Number(quarterPart);
+    const startMonth = (quarter - 1) * 3 + 1;
+    const startDate = `${year}-${String(startMonth).padStart(2, "0")}-01`;
+    const endDate = `${year}-${String(startMonth + 2).padStart(2, "0")}-${String(new Date(year, startMonth + 2, 0).getDate()).padStart(2, "0")}`;
+    return { startDate, endDate };
+  }
+  if (kind === "year") return { startDate: `${key}-01-01`, endDate: `${key}-12-31` };
+  return { startDate: `${key}-01`, endDate: monthEndDate(key) };
+}
+
+function previousPeriodKey(kind, key) {
+  const bounds = periodBounds(kind, key);
+  return periodKeyForDate(kind, addDays(bounds.startDate, -1));
+}
+
+function periodLabel(kind, key) {
+  const bounds = periodBounds(kind, key);
+  const label = kind === "week" ? "周" : kind === "month" ? "月" : kind === "quarter" ? "季" : "年";
+  return `${key} ${label} (${bounds.startDate} 至 ${bounds.endDate})`;
+}
+
+function daysSince(dateString) {
+  if (!dateString) return Infinity;
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return Infinity;
+  return Math.floor((Date.now() - date.getTime()) / 86400000);
+}
+
+function backupStatusText() {
+  const lastBackup = state.settings.lastBackupAt;
+  if (!lastBackup) return "还没有备份记录，建议先导出一次 JSON 备份。";
+  const days = Math.max(0, daysSince(lastBackup));
+  const date = new Date(lastBackup).toLocaleString("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  return `上次备份：${date}，距今 ${days} 天。`;
+}
+
+function normalizeSymbol(symbol) {
+  return String(symbol || "").trim().toUpperCase();
+}
+
+function marketSecid(symbol) {
+  const code = normalizeSymbol(symbol);
+  if (/^(5|6|9)/.test(code)) return `1.${code}`;
+  return `0.${code}`;
+}
+
+function allKnownSymbols() {
+  const symbols = new Set();
+  state.initialPositions.forEach((item) => {
+    if (item.symbol) symbols.add(normalizeSymbol(item.symbol));
+  });
+  state.trades.forEach((trade) => {
+    if (trade.symbol) symbols.add(normalizeSymbol(trade.symbol));
+  });
+  state.corporateActions.forEach((action) => {
+    if (action.symbol) symbols.add(normalizeSymbol(action.symbol));
+  });
+  Object.keys(state.prices).forEach((symbol) => symbols.add(normalizeSymbol(symbol)));
+  return [...symbols].filter(Boolean);
+}
+
+function load() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+
+  try {
+    const saved = JSON.parse(raw);
+    state.trades = Array.isArray(saved.trades) ? saved.trades : [];
+    state.prices = saved.prices && typeof saved.prices === "object" ? saved.prices : {};
+    state.previousCloses = saved.previousCloses && typeof saved.previousCloses === "object" ? saved.previousCloses : {};
+    state.initialPositions = Array.isArray(saved.initialPositions) ? saved.initialPositions : [];
+    state.corporateActions = Array.isArray(saved.corporateActions) ? saved.corporateActions : [];
+    state.settings = { ...defaultSettings, ...(saved.settings || {}) };
+  } catch {
+    state.trades = [];
+    state.prices = {};
+    state.previousCloses = {};
+    state.initialPositions = [];
+    state.corporateActions = [];
+    state.settings = { ...defaultSettings };
+  }
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function tradeAmount(trade) {
+  return trade.price * trade.quantity;
+}
+
+function calcFees(input) {
+  const amount = tradeAmount(input);
+  const commission = amount > 0 ? Math.max(amount * state.settings.commissionRate, state.settings.minCommission) : 0;
+  const stampTax = input.side === "sell" ? amount * state.settings.stampRate : 0;
+  const transferFee = amount * state.settings.transferRate;
+
+  return {
+    commission: roundMoney(commission),
+    stampTax: roundMoney(stampTax),
+    transferFee: roundMoney(transferFee),
+  };
+}
+
+function tradeFees(trade) {
+  return calcFees(trade);
+}
+
+function totalFee(trade) {
+  const fees = tradeFees(trade);
+  return fees.commission + fees.stampTax + fees.transferFee;
+}
+
+function roundMoney(value) {
+  return Math.round((Number(value) || 0) * 100) / 100;
+}
+
+function readAmountInput(input) {
+  const raw = String(input.value || "").replace(/,/g, "").trim();
+  return Number(raw) || 0;
+}
+
+function sortedTrades(trades = state.trades) {
+  return [...trades].sort((a, b) => {
+    if (a.date === b.date) return a.createdAt - b.createdAt;
+    return a.date.localeCompare(b.date);
+  });
+}
+
+function buildInitialBooks() {
+  const books = new Map();
+
+  for (const item of state.initialPositions) {
+    const key = normalizeSymbol(item.symbol);
+    const book = books.get(key) || {
+      symbol: key,
+      name: item.name,
+      lots: [],
+      realized: 0,
+      realizedRows: [],
+      buyCount: 0,
+      sellCount: 0,
+      totalFees: 0,
+      originalQuantity: 0,
+      originalCost: 0,
+      adjustedCost: 0,
+    };
+
+    book.name = item.name || book.name;
+    book.originalQuantity += Number(item.quantity) || 0;
+    book.originalCost += Number(item.cost) || 0;
+    book.adjustedCost += Number(item.cost) || 0;
+    book.lots.push({
+      quantity: item.quantity,
+      unitCost: item.quantity > 0 ? item.cost / item.quantity : 0,
+      source: "initial",
+      date: item.date || "初始",
+    });
+    books.set(key, book);
+  }
+
+  return books;
+}
+
+function applyBonusActions(books) {
+  const bonusActions = state.corporateActions
+    .filter((action) => action.type === "bonus")
+    .sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+
+  for (const action of bonusActions) {
+    const key = normalizeSymbol(action.symbol);
+    const quantity = Number(action.value) || 0;
+    if (!key || quantity <= 0) continue;
+
+    const book = books.get(key) || {
+      symbol: key,
+      name: action.name,
+      lots: [],
+      realized: 0,
+      realizedRows: [],
+      buyCount: 0,
+      sellCount: 0,
+      totalFees: 0,
+      originalQuantity: 0,
+      originalCost: 0,
+      adjustedCost: 0,
+    };
+    const currentQuantity = book.lots.reduce((sum, lot) => sum + lot.quantity, 0);
+    const totalCost = book.lots.reduce((sum, lot) => sum + lot.quantity * lot.unitCost, 0);
+    const newQuantity = currentQuantity + quantity;
+
+    book.name = action.name || book.name;
+    book.lots = newQuantity > 0
+      ? [{ quantity: newQuantity, unitCost: totalCost / newQuantity, source: action.id, date: action.date }]
+      : [];
+    books.set(key, book);
+  }
+}
+
+function dividendTotal() {
+  return state.corporateActions
+    .filter((action) => action.type === "dividend")
+    .reduce((sum, action) => sum + (Number(action.value) || 0), 0);
+}
+
+function applyOriginalCostAdjustments(books) {
+  const actions = [...state.corporateActions].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+
+  for (const action of actions) {
+    const key = normalizeSymbol(action.symbol);
+    const book = books.get(key);
+    if (!book || book.originalQuantity <= 0) continue;
+
+    const value = Number(action.value) || 0;
+    if (value <= 0) continue;
+
+    if (action.type === "bonus") {
+      book.originalQuantity += value;
+    }
+
+    if (action.type === "dividend") {
+      book.originalCost = Math.max(0, book.originalCost - value);
+    }
+  }
+}
+
+function calculatePortfolio(trades = state.trades) {
+  const books = buildInitialBooks();
+  applyBonusActions(books);
+  let cash = (Number(state.settings.initialCash) || 0) + dividendTotal();
+
+  for (const trade of sortedTrades(trades)) {
+    const key = normalizeSymbol(trade.symbol);
+    const book = books.get(key) || {
+      symbol: key,
+      name: trade.name,
+      lots: [],
+      realized: 0,
+      realizedRows: [],
+      buyCount: 0,
+      sellCount: 0,
+      totalFees: 0,
+      originalQuantity: 0,
+      originalCost: 0,
+      adjustedCost: 0,
+    };
+    const fees = tradeFees(trade);
+    const fee = fees.commission + fees.stampTax + fees.transferFee;
+    const amount = tradeAmount(trade);
+
+    book.name = trade.name || book.name;
+    book.totalFees += fee;
+
+    if (trade.side === "buy") {
+      if (book.originalQuantity <= 0) {
+        book.originalQuantity = trade.quantity;
+        book.originalCost = amount + fee;
+      }
+      book.lots.push({
+        quantity: trade.quantity,
+        unitCost: (amount + fee) / trade.quantity,
+        source: trade.id,
+        date: trade.date,
+      });
+      book.buyCount += 1;
+      book.adjustedCost += amount + fee;
+      cash -= amount + fee;
+    } else {
+      let remaining = trade.quantity;
+      let costBasis = 0;
+
+      while (remaining > 0 && book.lots.length) {
+        const lot = book.lots[0];
+        const used = Math.min(remaining, lot.quantity);
+        costBasis += used * lot.unitCost;
+        lot.quantity -= used;
+        remaining -= used;
+        if (lot.quantity <= 0.000001) book.lots.shift();
+      }
+
+      const soldQuantity = trade.quantity - remaining;
+      const proceeds = amount - fee;
+      const realized = soldQuantity > 0 ? proceeds - costBasis : 0;
+      book.realized += realized;
+      book.sellCount += 1;
+      book.adjustedCost -= proceeds;
+      book.realizedRows.push({
+        symbol: key,
+        name: book.name,
+        tradeId: trade.id,
+        date: trade.date,
+        quantity: soldQuantity,
+        proceeds,
+        costBasis,
+        pnl: realized,
+      });
+      cash += proceeds;
+    }
+
+    books.set(key, book);
+  }
+
+  applyOriginalCostAdjustments(books);
+  state.corporateActions
+    .filter((action) => action.type === "dividend")
+    .forEach((action) => {
+      const book = books.get(normalizeSymbol(action.symbol));
+      if (book) book.adjustedCost -= Number(action.value) || 0;
+    });
+
+  const realizedRows = [];
+  const positions = [...books.values()].map((book) => {
+    const quantity = book.lots.reduce((sum, lot) => sum + lot.quantity, 0);
+    const holdingCost = book.lots.reduce((sum, lot) => sum + lot.quantity * lot.unitCost, 0);
+    const adjustedCost = quantity > 0 ? book.adjustedCost : 0;
+    const currentPrice = state.prices[book.symbol] ?? "";
+    const price = Number(currentPrice) || 0;
+    const marketValue = quantity * price;
+    const floating = marketValue - holdingCost;
+    const totalPnl = quantity > 0 ? marketValue - adjustedCost : book.realized + stockDividendTotal(book.symbol);
+    const assetRealized = totalPnl - floating;
+    const dayPnl = calculateStockDayPnl(book.symbol, quantity, price, trades);
+    realizedRows.push(...book.realizedRows);
+
+    return {
+      symbol: book.symbol,
+      name: book.name,
+      quantity,
+      cost: holdingCost,
+      adjustedCost,
+      initialAverageCost: book.originalQuantity > 0 ? book.originalCost / book.originalQuantity : 0,
+      averageCost: quantity > 0 ? adjustedCost / quantity : 0,
+      currentPrice,
+      marketValue,
+      dayPnl,
+      floating,
+      assetRealized,
+      totalPnl,
+      realized: book.realized,
+      buyCount: book.buyCount,
+      sellCount: book.sellCount,
+      totalFees: book.totalFees,
+    };
+  });
+
+  return { positions, realizedRows, cash };
+}
+
+function latestTradeDate(trades = state.trades) {
+  return sortedTrades(trades).at(-1)?.date || today();
+}
+
+function calculateStockDayPnl(symbol, endingQuantity, currentPrice, trades = state.trades) {
+  const key = normalizeSymbol(symbol);
+  const price = Number(currentPrice) || 0;
+  const previousClose = Number(state.previousCloses[key]) || 0;
+  if (!price) return 0;
+
+  const dayKey = latestTradeDate(trades);
+  const dayTrades = sortedTrades(trades).filter((trade) => normalizeSymbol(trade.symbol) === key && trade.date === dayKey);
+  const traded = dayTrades.reduce(
+    (acc, trade) => {
+      const amount = tradeAmount(trade);
+      if (trade.side === "buy") {
+        acc.buyQuantity += trade.quantity;
+        acc.buyAmount += amount;
+      } else {
+        acc.sellQuantity += trade.quantity;
+        acc.sellAmount += amount;
+      }
+      acc.fees += totalFee(trade);
+      return acc;
+    },
+    { buyQuantity: 0, sellQuantity: 0, buyAmount: 0, sellAmount: 0, fees: 0 },
+  );
+  const openingQuantity = Math.max(0, endingQuantity - traded.buyQuantity + traded.sellQuantity);
+  const openingPrice = previousClose || price;
+
+  return endingQuantity * price + traded.sellAmount - traded.buyAmount - openingQuantity * openingPrice - traded.fees;
+}
+
+function uniqueTradeDates() {
+  return [...new Set(state.trades.map((trade) => trade.date))]
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b));
+}
+
+function calculateEquityCurve() {
+  const dates = uniqueTradeDates();
+  const initialAssets = (Number(state.settings.initialCash) || 0) + initialPositionCost();
+  if (!dates.length) {
+    const now = calculatePortfolio([]);
+    const marketValue = now.positions.reduce((sum, item) => sum + item.marketValue, 0);
+    const assets = now.cash + marketValue;
+    return [
+      {
+        date: "当前",
+        cash: now.cash,
+        marketValue,
+        assets,
+        pnl: assets - initialAssets,
+      },
+    ];
+  }
+
+  return dates.map((date) => {
+    const trades = state.trades.filter((trade) => trade.date <= date);
+    const snapshot = calculatePortfolio(trades);
+    const marketValue = snapshot.positions.reduce((sum, item) => sum + item.marketValue, 0);
+    const assets = snapshot.cash + marketValue;
+    return {
+      date,
+      cash: snapshot.cash,
+      marketValue,
+      assets,
+      pnl: assets - initialAssets,
+    };
+  });
+}
+
+function calculatePnlCalendarRows() {
+  let previousPnl = 0;
+  return calculateEquityCurve().map((row) => {
+    const periodPnl = row.pnl - previousPnl;
+    previousPnl = row.pnl;
+    return {
+      ...row,
+      periodPnl,
+    };
+  });
+}
+
+function latestDatedRow(rows) {
+  return [...rows].reverse().find((row) => /^\d{4}-\d{2}-\d{2}$/.test(row.date)) || null;
+}
+
+function periodPnlSummary(rows) {
+  const latest = latestDatedRow(rows);
+  const now = new Date();
+  const monthKey = latest ? latest.date.slice(0, 7) : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const yearKey = latest ? latest.date.slice(0, 4) : String(now.getFullYear());
+  const dayKey = latest ? latest.date : today();
+  return rows.reduce(
+    (acc, row) => {
+      if (row.date === dayKey) acc.day += row.periodPnl;
+      if (row.date.startsWith(monthKey)) acc.month += row.periodPnl;
+      if (row.date.startsWith(yearKey)) acc.year += row.periodPnl;
+      return acc;
+    },
+    { day: 0, month: 0, year: 0, dayKey, monthKey, yearKey },
+  );
+}
+
+function calculateRangeSummary(startDate = "", endDate = "") {
+  const range = dateRangeBounds(startDate, endDate);
+  const rows = calculatePnlCalendarRows().filter((row) => dateInRange(row.date, range.startDate, range.endDate));
+  const trades = state.trades.filter((trade) => dateInRange(trade.date, range.startDate, range.endDate));
+  const dividends = state.corporateActions
+    .filter((action) => action.type === "dividend" && dateInRange(action.date, range.startDate, range.endDate))
+    .reduce((sum, action) => sum + (Number(action.value) || 0), 0);
+  const buyAmount = trades.filter((trade) => trade.side === "buy").reduce((sum, trade) => sum + tradeAmount(trade), 0);
+  const sellAmount = trades.filter((trade) => trade.side === "sell").reduce((sum, trade) => sum + tradeAmount(trade), 0);
+  const fees = trades.reduce((sum, trade) => sum + totalFee(trade), 0);
+  const matched = calculateTradePairPnL().reduce((sum, row) => {
+    const rangePnl = (row.matchDetails || []).reduce((detailSum, detail) => {
+      const completionDate = detail.buyDate > detail.sellDate ? detail.buyDate : detail.sellDate;
+      return dateInRange(completionDate, range.startDate, range.endDate) ? detailSum + detail.pnl : detailSum;
+    }, 0);
+    return sum + rangePnl;
+  }, 0);
+
+  return {
+    ...range,
+    pnl: rows.reduce((sum, row) => sum + row.periodPnl, 0),
+    totalPnl: rows.reduce((sum, row) => sum + row.periodPnl, 0),
+    matched,
+    tradeCount: trades.length,
+    buyAmount,
+    sellAmount,
+    fees,
+    dividends,
+  };
+}
+
+function allActivityDates() {
+  const dates = [
+    ...state.initialPositions.map((item) => item.date),
+    ...state.trades.map((trade) => trade.date),
+    ...state.corporateActions.map((action) => action.date),
+  ].filter(validDateString);
+  return dates.length ? dates : [today()];
+}
+
+function periodOptions(kind) {
+  const keys = [...new Set(allActivityDates().map((date) => periodKeyForDate(kind, date)).filter(Boolean))];
+  return keys.sort((a, b) => b.localeCompare(a));
+}
+
+function snapshotAssetsBefore(startDate) {
+  const trades = state.trades.filter((trade) => !startDate || trade.date < startDate);
+  const snapshot = calculatePortfolio(trades);
+  const marketValue = snapshot.positions.reduce((sum, position) => sum + position.marketValue, 0);
+  const assets = snapshot.cash + marketValue;
+  return assets > 0 ? assets : (Number(state.settings.initialCash) || 0) + initialPositionCost();
+}
+
+function rangeMatchDetails(startDate, endDate, symbol = "") {
+  const key = normalizeSymbol(symbol);
+  return calculateTradePairPnL()
+    .filter((row) => !key || row.symbol === key)
+    .flatMap((row) => (row.matchDetails || []).map((match) => ({ ...match, symbol: row.symbol, name: row.name })))
+    .filter((match) => {
+      const completionDate = match.buyDate > match.sellDate ? match.buyDate : match.sellDate;
+      return dateInRange(completionDate, startDate, endDate);
+    });
+}
+
+function calculatePeriodOverview(kind, key) {
+  const bounds = periodBounds(kind, key);
+  const summary = calculateRangeSummary(bounds.startDate, bounds.endDate);
+  const startAssets = snapshotAssetsBefore(bounds.startDate);
+  const matches = rangeMatchDetails(bounds.startDate, bounds.endDate);
+  const winRate = matches.length ? (matches.filter((match) => match.pnl > 0).length / matches.length) * 100 : 0;
+  const floating = summary.totalPnl - summary.matched - summary.dividends;
+  const previousKey = previousPeriodKey(kind, key);
+  const previousBounds = periodBounds(kind, previousKey);
+  const previous = calculateRangeSummary(previousBounds.startDate, previousBounds.endDate);
+  const change = summary.totalPnl - previous.totalPnl;
+  return {
+    ...summary,
+    ...bounds,
+    key,
+    kind,
+    startAssets,
+    returnRate: startAssets > 0 ? (summary.totalPnl / startAssets) * 100 : null,
+    floating,
+    matchCount: matches.length,
+    winRate,
+    previousKey,
+    previousPnl: previous.totalPnl,
+    change,
+  };
+}
+
+function positionBySymbolFrom(trades) {
+  return new Map(calculatePortfolio(trades).positions.map((position) => [position.symbol, position]));
+}
+
+function calculatePeriodStockRows(kind, key) {
+  const bounds = periodBounds(kind, key);
+  const names = stockNameMap();
+  const currentPositions = new Map(calculatePortfolio().positions.map((position) => [position.symbol, position]));
+  const startPositions = positionBySymbolFrom(state.trades.filter((trade) => trade.date < bounds.startDate));
+  const endPositions = positionBySymbolFrom(state.trades.filter((trade) => trade.date <= bounds.endDate));
+  const assetTotal = portfolioTotals().assets;
+
+  return [...allKnownSymbols()]
+    .map((symbol) => {
+      const keySymbol = normalizeSymbol(symbol);
+      const trades = state.trades.filter((trade) => normalizeSymbol(trade.symbol) === keySymbol && dateInRange(trade.date, bounds.startDate, bounds.endDate));
+      const actions = state.corporateActions.filter((action) => normalizeSymbol(action.symbol) === keySymbol && dateInRange(action.date, bounds.startDate, bounds.endDate));
+      const dividends = actions.filter((action) => action.type === "dividend").reduce((sum, action) => sum + (Number(action.value) || 0), 0);
+      const fees = trades.reduce((sum, trade) => sum + totalFee(trade), 0);
+      const matches = rangeMatchDetails(bounds.startDate, bounds.endDate, keySymbol);
+      const matched = matches.reduce((sum, match) => sum + match.pnl, 0);
+      const startFloating = startPositions.get(keySymbol)?.floating || 0;
+      const endFloating = endPositions.get(keySymbol)?.floating || 0;
+      const floating = endFloating - startFloating;
+      const current = currentPositions.get(keySymbol) || { quantity: 0, marketValue: 0, totalPnl: 0, name: names.get(keySymbol) || keySymbol };
+      const tradeCount = trades.length;
+      const winRate = matches.length ? (matches.filter((match) => match.pnl > 0).length / matches.length) * 100 : 0;
+      const totalPnl = Number(current.totalPnl) || 0;
+      const hasActivity = tradeCount || actions.length || matches.length || current.quantity > 0 || Math.abs(totalPnl) > 0.000001;
+      return {
+        symbol: keySymbol,
+        name: current.name || names.get(keySymbol) || keySymbol,
+        totalPnl,
+        matched,
+        floating,
+        dividends,
+        fees,
+        tradeCount,
+        matchCount: matches.length,
+        winRate,
+        allocation: assetTotal > 0 ? (current.marketValue / assetTotal) * 100 : 0,
+        currentQuantity: current.quantity || 0,
+      };
+    })
+    .filter((row) => row.symbol && row.name && (row.currentQuantity > 0 || row.tradeCount || row.dividends || row.matchCount || Math.abs(row.totalPnl) > 0.000001))
+    .sort((a, b) => b.totalPnl - a.totalPnl);
+}
+
+function summaryToneText(change) {
+  if (change > 0) return "改善";
+  if (change < 0) return "下降";
+  return "持平";
+}
+
+function stockNameMap() {
+  const names = new Map();
+  state.initialPositions.forEach((item) => {
+    if (item.symbol) names.set(normalizeSymbol(item.symbol), item.name || normalizeSymbol(item.symbol));
+  });
+  state.trades.forEach((trade) => {
+    if (trade.symbol) names.set(normalizeSymbol(trade.symbol), trade.name || normalizeSymbol(trade.symbol));
+  });
+  state.corporateActions.forEach((action) => {
+    if (action.symbol) names.set(normalizeSymbol(action.symbol), action.name || normalizeSymbol(action.symbol));
+  });
+  return names;
+}
+
+function periodEndDate(key) {
+  if (key.length === 4) return `${key}-12-31`;
+  const [year, month] = key.split("-").map(Number);
+  return `${key}-${String(new Date(year, month, 0).getDate()).padStart(2, "0")}`;
+}
+
+function stockReportDates(symbol) {
+  const key = normalizeSymbol(symbol);
+  const current = calculatePortfolio().positions.find((position) => position.symbol === key);
+  const matchDates = rangeMatchDetails("", "", key).map((match) => (match.buyDate > match.sellDate ? match.buyDate : match.sellDate));
+  return [
+    ...new Set([
+      ...state.trades.filter((trade) => normalizeSymbol(trade.symbol) === key).map((trade) => trade.date),
+      ...state.corporateActions.filter((action) => normalizeSymbol(action.symbol) === key).map((action) => action.date),
+      ...matchDates,
+      ...(current && current.quantity > 0 ? [today()] : []),
+    ]),
+  ]
+    .filter(validDateString)
+    .sort((a, b) => a.localeCompare(b));
+}
+
+function stockDayReport(symbol, date) {
+  const key = normalizeSymbol(symbol);
+  const trades = state.trades.filter((trade) => normalizeSymbol(trade.symbol) === key && trade.date === date);
+  const actions = state.corporateActions.filter((action) => normalizeSymbol(action.symbol) === key && action.date === date);
+  const throughTrades = state.trades.filter((trade) => trade.date <= date);
+  const position = calculatePortfolio(throughTrades).positions.find((item) => item.symbol === key);
+  const dividends = actions.filter((action) => action.type === "dividend").reduce((sum, action) => sum + (Number(action.value) || 0), 0);
+  const matched = rangeMatchDetails(date, date, key).reduce((sum, match) => sum + match.pnl, 0);
+  const buyAmount = trades.filter((trade) => trade.side === "buy").reduce((sum, trade) => sum + tradeAmount(trade), 0);
+  const sellAmount = trades.filter((trade) => trade.side === "sell").reduce((sum, trade) => sum + tradeAmount(trade), 0);
+  const fees = trades.reduce((sum, trade) => sum + totalFee(trade), 0);
+  const totalPnl = position ? Number(position.dayPnl) || 0 : 0;
+
+  return {
+    date,
+    totalPnl,
+    matched,
+    turnover: buyAmount + sellAmount,
+    buyAmount,
+    sellAmount,
+    fees,
+    tradeCount: trades.length,
+    dividends,
+  };
+}
+
+function stockReportRows(symbol, startDate, endDate) {
+  return stockReportDates(symbol)
+    .filter((date) => dateInRange(date, startDate, endDate))
+    .map((date) => stockDayReport(symbol, date))
+    .filter((row) => row.tradeCount || row.dividends || Math.abs(row.totalPnl) > 0.000001 || Math.abs(row.matched) > 0.000001);
+}
+
+function sumStockReportRows(rows) {
+  return rows.reduce(
+    (acc, row) => {
+      acc.totalPnl += row.totalPnl;
+      acc.matched += row.matched;
+      acc.turnover += row.turnover;
+      acc.buyAmount += row.buyAmount;
+      acc.sellAmount += row.sellAmount;
+      acc.fees += row.fees;
+      acc.tradeCount += row.tradeCount;
+      acc.dividends += row.dividends;
+      return acc;
+    },
+    { totalPnl: 0, matched: 0, turnover: 0, buyAmount: 0, sellAmount: 0, fees: 0, tradeCount: 0, dividends: 0 },
+  );
+}
+
+function jsonp(url, callbackName) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    const cleanup = () => {
+      delete window[callbackName];
+      script.remove();
+    };
+    const timer = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("timeout"));
+    }, 10000);
+
+    window[callbackName] = (data) => {
+      window.clearTimeout(timer);
+      cleanup();
+      resolve(data);
+    };
+    script.onerror = () => {
+      window.clearTimeout(timer);
+      cleanup();
+      reject(new Error("network"));
+    };
+    script.src = url;
+    document.body.appendChild(script);
+  });
+}
+
+async function fetchQuote(symbol) {
+  const callbackName = `quote_${normalizeSymbol(symbol)}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  const secid = marketSecid(symbol);
+  const url = `https://push2.eastmoney.com/api/qt/stock/get?secid=${encodeURIComponent(secid)}&fields=f43,f57,f58,f60,f152&cb=${callbackName}`;
+  const result = await jsonp(url, callbackName);
+  const data = result && result.data;
+  if (!data || data.f43 === undefined || data.f43 === "-" || data.f43 === null) {
+    throw new Error("empty quote");
+  }
+  const scale = Number(data.f152) || 2;
+  const price = Number(data.f43) / 10 ** scale;
+  return {
+    symbol: data.f57 || normalizeSymbol(symbol),
+    name: data.f58 || "",
+    price,
+    previousClose: data.f60 === undefined || data.f60 === "-" || data.f60 === null ? 0 : Number(data.f60) / 10 ** scale,
+  };
+}
+
+async function fillStockInfo(symbolInput, nameInput, priceInput) {
+  const symbol = normalizeSymbol(symbolInput.value);
+  if (!/^\d{5,6}$/.test(symbol)) return;
+
+  symbolInput.value = symbol;
+  try {
+    const quote = await fetchQuote(symbol);
+    if (quote.name) nameInput.value = quote.name;
+    if (priceInput && quote.price > 0) priceInput.value = Number(quote.price.toFixed(3));
+    state.prices[symbol] = Number(quote.price.toFixed(3));
+    if (quote.previousClose > 0) state.previousCloses[symbol] = Number(quote.previousClose.toFixed(3));
+    save();
+    updatePreview();
+    renderDashboard();
+    renderPositions();
+  } catch {
+    // Name lookup is a convenience only; manual entry still works when quotes are unavailable.
+  }
+}
+
+async function refreshQuotes() {
+  const symbols = allKnownSymbols();
+
+  if (!symbols.length) {
+    els.quoteStatus.textContent = "暂无持仓可更新";
+    return;
+  }
+
+  els.quoteStatus.textContent = `正在更新 ${symbols.length} 只股票...`;
+  let success = 0;
+  for (const symbol of symbols) {
+    try {
+      const quote = await fetchQuote(symbol);
+      state.prices[symbol] = Number(quote.price.toFixed(3));
+      if (quote.previousClose > 0) state.previousCloses[symbol] = Number(quote.previousClose.toFixed(3));
+      success += 1;
+    } catch {
+      // Keep the existing manual price when an individual quote fails.
+    }
+  }
+
+  save();
+  renderAll();
+  const time = new Date().toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" });
+  els.quoteStatus.textContent = success ? `已更新 ${success}/${symbols.length}，${time}` : "股价更新失败，可手动输入";
+}
+
+function initialPositionCost() {
+  return state.initialPositions.reduce((sum, item) => sum + (Number(item.cost) || 0), 0);
+}
+
+function calculateTradePairPnL(startDate = "", endDate = "", sourceTrades = state.trades) {
+  const books = new Map();
+  const stageTrades = sortedTrades(sourceTrades).filter((trade) => {
+    if (startDate && trade.date < startDate) return false;
+    if (endDate && trade.date > endDate) return false;
+    return true;
+  });
+
+  for (const trade of stageTrades) {
+    const key = normalizeSymbol(trade.symbol);
+    const book = books.get(key) || {
+      symbol: key,
+      name: trade.name,
+      buyLots: [],
+      sellLots: [],
+      matchedQuantity: 0,
+      buyCost: 0,
+      sellIncome: 0,
+      pnl: 0,
+      matchDetails: [],
+    };
+    const amount = tradeAmount(trade);
+    const fee = totalFee(trade);
+    const netAmount = trade.side === "sell" ? amount - fee : amount + fee;
+    const unitNet = trade.quantity > 0 ? netAmount / trade.quantity : 0;
+
+    book.name = trade.name || book.name;
+
+    if (trade.side === "buy") {
+      let remaining = trade.quantity;
+
+      while (remaining > 0 && book.sellLots.length) {
+        const lot = book.sellLots[book.sellLots.length - 1];
+        const used = Math.min(remaining, lot.quantity);
+        const buyCost = used * unitNet;
+        const sellIncome = used * lot.unitIncome;
+        book.matchedQuantity += used;
+        book.buyCost += buyCost;
+        book.sellIncome += sellIncome;
+        book.pnl += sellIncome - buyCost;
+        book.matchDetails.push({
+          quantity: used,
+          buyDate: trade.date,
+          buyPrice: trade.price,
+          sellDate: lot.date,
+          sellPrice: lot.price,
+          buyCost,
+          sellIncome,
+          pnl: sellIncome - buyCost,
+        });
+        lot.quantity -= used;
+        remaining -= used;
+        if (lot.quantity <= 0.000001) book.sellLots.pop();
+      }
+
+      if (remaining > 0) {
+        book.buyLots.push({
+          quantity: remaining,
+          unitCost: unitNet,
+          price: trade.price,
+          date: trade.date,
+        });
+      }
+    } else {
+      let remaining = trade.quantity;
+
+      while (remaining > 0 && book.buyLots.length) {
+        const lot = book.buyLots[book.buyLots.length - 1];
+        const used = Math.min(remaining, lot.quantity);
+        const buyCost = used * lot.unitCost;
+        const sellIncome = used * unitNet;
+        book.matchedQuantity += used;
+        book.buyCost += buyCost;
+        book.sellIncome += sellIncome;
+        book.pnl += sellIncome - buyCost;
+        book.matchDetails.push({
+          quantity: used,
+          buyDate: lot.date,
+          buyPrice: lot.price,
+          sellDate: trade.date,
+          sellPrice: trade.price,
+          buyCost,
+          sellIncome,
+          pnl: sellIncome - buyCost,
+        });
+        lot.quantity -= used;
+        remaining -= used;
+        if (lot.quantity <= 0.000001) book.buyLots.pop();
+      }
+
+      if (remaining > 0) {
+        book.sellLots.push({
+          quantity: remaining,
+          unitIncome: unitNet,
+          price: trade.price,
+          date: trade.date,
+        });
+      }
+    }
+
+    books.set(key, book);
+  }
+
+  return [...books.values()]
+    .map((book) => {
+      const unmatchedBuyQuantity = book.buyLots.reduce((sum, lot) => sum + lot.quantity, 0);
+      const unmatchedSellQuantity = book.sellLots.reduce((sum, lot) => sum + lot.quantity, 0);
+      const unmatchedQuantity = unmatchedBuyQuantity - unmatchedSellQuantity;
+      const unmatchedDetails = [
+        ...book.buyLots.map((lot) => ({ quantity: lot.quantity, price: lot.price || lot.unitCost })),
+        ...book.sellLots.map((lot) => ({ quantity: -lot.quantity, price: lot.price || lot.unitIncome })),
+      ];
+      return {
+        ...book,
+        unmatchedBuyQuantity,
+        unmatchedSellQuantity,
+        unmatchedQuantity,
+        unmatchedDetails,
+        averageBuy: book.matchedQuantity > 0 ? book.buyCost / book.matchedQuantity : 0,
+        averageSell: book.matchedQuantity > 0 ? book.sellIncome / book.matchedQuantity : 0,
+      };
+    })
+    .filter((book) => book.matchedQuantity > 0 || book.unmatchedBuyQuantity > 0 || book.unmatchedSellQuantity > 0);
+}
+
+function matchedPnlTotal(trades = state.trades) {
+  return calculateTradePairPnL("", "", trades).reduce((sum, row) => sum + row.pnl, 0);
+}
+
+function portfolioTotals() {
+  const { positions, cash } = calculatePortfolio();
+  const totals = positions.reduce(
+    (acc, position) => {
+      acc.cost += position.cost;
+      acc.marketValue += position.marketValue;
+      acc.floating += position.floating;
+      acc.realized += position.realized;
+      return acc;
+    },
+    { cash, assets: cash, cost: 0, marketValue: 0, floating: 0, realized: 0 },
+  );
+  totals.assets = totals.cash + totals.marketValue;
+  return totals;
+}
+
+function calculateDayPnl() {
+  const { positions } = calculatePortfolio();
+  return positions.reduce((sum, position) => {
+    if (position.quantity <= 0) return sum;
+    const current = Number(state.prices[position.symbol]) || 0;
+    const previous = Number(state.previousCloses[position.symbol]) || 0;
+    if (!current || !previous) return sum;
+    return sum + position.quantity * (current - previous);
+  }, 0);
+}
+
+function setView(viewId) {
+  els.views.forEach((view) => view.classList.toggle("active", view.id === viewId));
+  els.navButtons.forEach((button) => button.classList.toggle("active", button.dataset.view === viewId));
+  els.pageTitle.textContent = titles[viewId] || "总览";
+}
+
+function classByValue(value) {
+  if (value > 0) return "positive";
+  if (value < 0) return "negative";
+  return "";
+}
+
+function resetForm() {
+  els.form.reset();
+  els.editingId.value = "";
+  els.tradeDate.value = today();
+  els.side.value = "buy";
+  els.formHeading.textContent = "新增交易";
+  document.querySelector("#save-trade").textContent = "保存交易";
+  updatePreview();
+}
+
+function readTradeForm() {
+  const existing = state.trades.find((item) => item.id === els.editingId.value);
+  return {
+    id: els.editingId.value || uid(),
+    date: els.tradeDate.value,
+    symbol: normalizeSymbol(els.symbol.value),
+    name: els.name.value.trim(),
+    side: els.side.value,
+    price: Number(els.price.value),
+    quantity: Number(els.quantity.value),
+    note: els.note.value.trim(),
+    createdAt: existing ? existing.createdAt : Date.now(),
+  };
+}
+
+function updatePreview() {
+  const trade = {
+    side: els.side.value,
+    price: Number(els.price.value) || 0,
+    quantity: Number(els.quantity.value) || 0,
+  };
+  const fees = calcFees(trade);
+  const amount = tradeAmount(trade);
+  const fee = fees.commission + fees.stampTax + fees.transferFee;
+  const net = trade.side === "sell" ? amount - fee : -(amount + fee);
+
+  els.commission.value = fees.commission.toFixed(2);
+  els.stampTax.value = fees.stampTax.toFixed(2);
+  els.transferFee.value = fees.transferFee.toFixed(2);
+  els.previewAmount.textContent = money(amount);
+  els.previewFee.textContent = money(fee);
+  els.previewNet.textContent = money(net);
+}
+
+function buildFlowRecords() {
+  const tradeFlows = state.trades.map((trade) => {
+    const fees = tradeFees(trade);
+    const fee = fees.commission + fees.stampTax + fees.transferFee;
+    return {
+      id: trade.id,
+      kind: "trade",
+      date: trade.date,
+      symbol: trade.symbol,
+      name: trade.name,
+      type: trade.side === "buy" ? "买入" : "卖出",
+      tone: trade.side,
+      price: number(trade.price, 3),
+      quantity: number(trade.quantity, 0),
+      amount: money(tradeAmount(trade)),
+      commission: money(fees.commission),
+      stampTax: money(fees.stampTax),
+      transferFee: money(fees.transferFee),
+      fee,
+      note: trade.note || "",
+      order: trade.createdAt || 0,
+    };
+  });
+  const actionFlows = state.corporateActions.map((action) => {
+    const isDividend = action.type === "dividend";
+    return {
+      id: action.id,
+      kind: "action",
+      date: action.date || "",
+      symbol: action.symbol,
+      name: action.name,
+      type: isDividend ? "现金分红" : "送股/转增",
+      tone: isDividend ? "sell" : "buy",
+      price: "-",
+      quantity: isDividend ? "-" : number(action.value, 0),
+      amount: isDividend ? money(action.value) : "-",
+      commission: "-",
+      stampTax: "-",
+      transferFee: "-",
+      fee: 0,
+      note: action.note || "",
+      order: 0,
+    };
+  });
+
+  return [...tradeFlows, ...actionFlows].sort((a, b) => b.date.localeCompare(a.date) || b.order - a.order);
+}
+
+function stockEvents(symbol) {
+  const key = normalizeSymbol(symbol);
+  const tradeEvents = state.trades
+    .filter((trade) => normalizeSymbol(trade.symbol) === key)
+    .map((trade) => {
+      const fee = totalFee(trade);
+      return {
+        date: trade.date,
+        type: trade.side === "buy" ? "买入" : "卖出",
+        tone: trade.side,
+        detail: `${number(trade.quantity, 0)}股 × ¥${number(trade.price, 3)}，金额 ${money(tradeAmount(trade))}，费用 ${money(fee)}`,
+        note: trade.note,
+        order: trade.createdAt || 0,
+      };
+    });
+  const initialEvents = state.initialPositions
+    .filter((item) => normalizeSymbol(item.symbol) === key)
+    .map((item) => ({
+      date: item.date || "开始",
+      type: "初始",
+      tone: "",
+      detail: `${number(item.quantity, 0)}股，成本 ${money(item.cost)}`,
+      note: "",
+      order: 0,
+    }));
+  const actionEvents = state.corporateActions
+    .filter((action) => normalizeSymbol(action.symbol) === key)
+    .map((action) => ({
+      date: action.date,
+      type: action.type === "dividend" ? "分红" : "送股/转增",
+      tone: action.type === "dividend" ? "sell" : "buy",
+      detail: action.type === "dividend" ? `现金分红 ${money(action.value)}` : `增加 ${number(action.value, 0)}股`,
+      note: action.note,
+      order: 0,
+    }));
+
+  return [...initialEvents, ...tradeEvents, ...actionEvents].sort((a, b) => b.date.localeCompare(a.date) || b.order - a.order);
+}
+
+function firstStockDate(symbol) {
+  const key = normalizeSymbol(symbol);
+  const dates = [
+    ...state.initialPositions.filter((item) => normalizeSymbol(item.symbol) === key).map((item) => item.date),
+    ...state.trades.filter((trade) => normalizeSymbol(trade.symbol) === key).map((trade) => trade.date),
+    ...state.corporateActions.filter((action) => normalizeSymbol(action.symbol) === key).map((action) => action.date),
+  ].filter(Boolean);
+  return dates.sort((a, b) => a.localeCompare(b))[0] || "";
+}
+
+function holdingDays(startDate, endDate) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) return "-";
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+  return Math.max(1, Math.round((end - start) / 86400000) + 1);
+}
+
+function latestStockSellDate(symbol) {
+  const key = normalizeSymbol(symbol);
+  const dates = state.trades
+    .filter((trade) => normalizeSymbol(trade.symbol) === key && trade.side === "sell")
+    .map((trade) => trade.date)
+    .filter(Boolean);
+  return dates.sort((a, b) => b.localeCompare(a))[0] || "";
+}
+
+function stockDividendTotal(symbol) {
+  const key = normalizeSymbol(symbol);
+  return state.corporateActions
+    .filter((action) => normalizeSymbol(action.symbol) === key && action.type === "dividend")
+    .reduce((sum, action) => sum + (Number(action.value) || 0), 0);
+}
+
+function stockFeeTotal(symbol) {
+  const key = normalizeSymbol(symbol);
+  return state.trades
+    .filter((trade) => normalizeSymbol(trade.symbol) === key)
+    .reduce((sum, trade) => sum + totalFee(trade), 0);
+}
+
+function stockInvestedCost(symbol) {
+  const key = normalizeSymbol(symbol);
+  const initialCost = state.initialPositions
+    .filter((item) => normalizeSymbol(item.symbol) === key)
+    .reduce((sum, item) => sum + (Number(item.cost) || 0), 0);
+  const buyCost = state.trades
+    .filter((trade) => normalizeSymbol(trade.symbol) === key && trade.side === "buy")
+    .reduce((sum, trade) => sum + tradeAmount(trade) + totalFee(trade), 0);
+  return initialCost + buyCost;
+}
+
+function openStockDetail(symbol) {
+  selectedDetailSymbol = normalizeSymbol(symbol);
+  renderStockDetail();
+  setView("stock-detail");
+}
+
+function renderRecords() {
+  const keyword = els.recordFilter.value.trim().toLowerCase();
+  const records = buildFlowRecords().filter((row) => `${row.symbol} ${row.name} ${row.type} ${row.note}`.toLowerCase().includes(keyword));
+
+  if (!records.length) {
+    els.recordsBody.innerHTML = `<tr><td colspan="12" class="empty-state">还没有流水记录</td></tr>`;
+    els.recordsCards.innerHTML = `<div class="empty-state">还没有流水记录</div>`;
+    return;
+  }
+
+  els.recordsBody.innerHTML = records
+    .map((row) => {
+      const actionButtons =
+        row.kind === "trade"
+          ? `
+              <button class="icon-action" data-edit="${row.id}">编辑</button>
+              <button class="icon-action" data-delete="${row.id}">删除</button>
+            `
+          : `<button class="icon-action" data-delete-action="${row.id}">删除</button>`;
+      return `
+        <tr>
+          <td>${row.date || "-"}</td>
+          <td>${row.symbol}</td>
+          <td>${row.name}</td>
+          <td><span class="tag ${row.tone}">${row.type}</span></td>
+          <td>${row.price}</td>
+          <td>${row.quantity}</td>
+          <td>${row.amount}</td>
+          <td>${row.commission}</td>
+          <td>${row.stampTax}</td>
+          <td>${row.transferFee}</td>
+          <td>${row.note || "-"}</td>
+          <td>
+            <div class="row-actions">
+              ${actionButtons}
+            </div>
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  els.recordsCards.innerHTML = records
+    .map((row) => {
+      const actionButtons =
+        row.kind === "trade"
+          ? `
+              <button class="icon-action" data-edit="${row.id}">编辑</button>
+              <button class="icon-action" data-delete="${row.id}">删除</button>
+            `
+          : `<button class="icon-action" data-delete-action="${row.id}">删除</button>`;
+      return `
+        <article class="mobile-card">
+          <div class="mobile-card-head">
+            <strong>${row.name}</strong>
+            <span class="tag ${row.tone}">${row.type}</span>
+          </div>
+          <dl>
+            <div><dt>日期</dt><dd>${row.date || "-"}</dd></div>
+            <div><dt>代码</dt><dd>${row.symbol}</dd></div>
+            <div><dt>价格</dt><dd>${row.price}</dd></div>
+            <div><dt>数量</dt><dd>${row.quantity}</dd></div>
+            <div><dt>金额</dt><dd>${row.amount}</dd></div>
+            <div><dt>费用</dt><dd>${row.fee ? money(row.fee) : "-"}</dd></div>
+          </dl>
+          <p>${row.note || "无备注"}</p>
+          <div class="row-actions">
+            ${actionButtons}
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function renderPositions() {
+  const { positions } = calculatePortfolio();
+  const matchedBySymbol = new Map(calculateTradePairPnL().map((row) => [row.symbol, row.pnl]));
+  const current = positions.filter((position) => position.quantity > 0);
+  const currentSymbols = new Set(current.map((position) => position.symbol));
+  const names = stockNameMap();
+  const closed = [...allKnownSymbols()]
+    .filter((symbol) => !currentSymbols.has(symbol) && stockEvents(symbol).length > 0)
+    .map((symbol) => {
+      const position = positions.find((item) => item.symbol === symbol) || {
+        symbol,
+        name: names.get(symbol) || symbol,
+        floating: 0,
+        realized: 0,
+      };
+      const realized = Number(position.realized) || 0;
+      const dividends = stockDividendTotal(symbol);
+      const fees = stockFeeTotal(symbol);
+      const closeDate = latestStockSellDate(symbol) || (stockEvents(symbol)[0] ? stockEvents(symbol)[0].date : "");
+      return {
+        symbol,
+        name: position.name || names.get(symbol) || symbol,
+        realized,
+        dividends,
+        fees,
+        totalPnl: realized + dividends,
+        closeDate,
+        days: holdingDays(firstStockDate(symbol), closeDate),
+      };
+    })
+    .filter((row) => row.realized !== 0 || row.dividends !== 0 || state.trades.some((trade) => normalizeSymbol(trade.symbol) === row.symbol));
+
+  if (!current.length) {
+    els.positionsBody.innerHTML = `<tr><td colspan="14" class="empty-state">暂无当前持仓</td></tr>`;
+    els.positionsCards.innerHTML = `<div class="empty-state">暂无当前持仓</div>`;
+  } else {
+    const sorted = current.sort((a, b) => b.marketValue - a.marketValue);
+
+    els.positionsBody.innerHTML = sorted
+      .map((position) => {
+        const matchedRealized = matchedBySymbol.get(position.symbol) || 0;
+        const investedCost = stockInvestedCost(position.symbol);
+        const returnRate = investedCost > 0 ? (position.totalPnl / investedCost) * 100 : 0;
+        return `
+          <tr>
+            <td>${position.symbol}</td>
+            <td>${position.name}</td>
+            <td>${number(position.quantity, 0)}</td>
+            <td>${money(position.initialAverageCost)}</td>
+            <td>${money(position.averageCost)}</td>
+            <td><input class="current-price-input" type="number" min="0" step="0.001" value="${position.currentPrice}" data-price-symbol="${position.symbol}" /></td>
+            <td>${money(position.marketValue)}</td>
+            <td class="${classByValue(position.dayPnl)}">${money(position.dayPnl)}</td>
+            <td class="${classByValue(returnRate)}">${investedCost > 0 ? `${number(returnRate, 2)}%` : "-"}</td>
+            <td class="${classByValue(matchedRealized)}">${money(matchedRealized)}</td>
+            <td class="${classByValue(position.totalPnl)}">${money(position.totalPnl)}</td>
+            <td><button class="icon-action" data-detail-symbol="${position.symbol}">详情</button></td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    els.positionsCards.innerHTML = sorted
+      .map((position) => {
+        const matchedRealized = matchedBySymbol.get(position.symbol) || 0;
+        const investedCost = stockInvestedCost(position.symbol);
+        const returnRate = investedCost > 0 ? (position.totalPnl / investedCost) * 100 : 0;
+        return `
+          <article class="mobile-card">
+            <div class="mobile-card-head">
+              <strong>${position.name}</strong>
+              <span>${position.symbol}</span>
+            </div>
+            <dl>
+              <div><dt>数量</dt><dd>${number(position.quantity, 0)}</dd></div>
+              <div><dt>原始成本</dt><dd>${money(position.initialAverageCost)}</dd></div>
+              <div><dt>现在成本</dt><dd>${money(position.averageCost)}</dd></div>
+              <div><dt>市值</dt><dd>${money(position.marketValue)}</dd></div>
+              <div><dt>当日盈亏</dt><dd class="${classByValue(position.dayPnl)}">${money(position.dayPnl)}</dd></div>
+              <div><dt>匹配实现</dt><dd class="${classByValue(matchedRealized)}">${money(matchedRealized)}</dd></div>
+              <div><dt>总盈亏</dt><dd class="${classByValue(position.totalPnl)}">${money(position.totalPnl)}</dd></div>
+              <div><dt>收益率</dt><dd class="${classByValue(returnRate)}">${investedCost > 0 ? `${number(returnRate, 2)}%` : "-"}</dd></div>
+            </dl>
+            <label class="mobile-price">
+              当前价
+              <input class="current-price-input" type="number" min="0" step="0.001" value="${position.currentPrice}" data-price-symbol="${position.symbol}" />
+            </label>
+            <div class="row-actions">
+              <button class="icon-action" data-detail-symbol="${position.symbol}">详情</button>
+            </div>
+          </article>
+        `;
+      })
+      .join("");
+  }
+
+  if (!closed.length) {
+    els.closedPositionsBody.innerHTML = `<tr><td colspan="9" class="empty-state">暂无已清仓股票</td></tr>`;
+    els.closedPositionsCards.innerHTML = `<div class="empty-state">暂无已清仓股票</div>`;
+    return;
+  }
+
+  const closedRows = closed.sort((a, b) => (b.closeDate || "").localeCompare(a.closeDate || ""));
+  els.closedPositionsBody.innerHTML = closedRows
+    .map(
+      (row) => `
+        <tr>
+          <td>${row.symbol}</td>
+          <td>${row.name}</td>
+          <td>${row.closeDate || "-"}</td>
+          <td>${row.days}</td>
+          <td class="${classByValue(row.realized)}">${money(row.realized)}</td>
+          <td>${money(row.dividends)}</td>
+          <td>${money(row.fees)}</td>
+          <td class="${classByValue(row.totalPnl)}">${money(row.totalPnl)}</td>
+          <td><button class="icon-action" data-detail-symbol="${row.symbol}">详情</button></td>
+        </tr>
+      `,
+    )
+    .join("");
+
+  els.closedPositionsCards.innerHTML = closedRows
+    .map(
+      (row) => `
+        <article class="mobile-card">
+          <div class="mobile-card-head">
+            <strong>${row.name}</strong>
+            <span>${row.symbol}</span>
+          </div>
+          <dl>
+            <div><dt>清仓日期</dt><dd>${row.closeDate || "-"}</dd></div>
+            <div><dt>持有天数</dt><dd>${row.days}</dd></div>
+            <div><dt>实现盈亏</dt><dd class="${classByValue(row.realized)}">${money(row.realized)}</dd></div>
+            <div><dt>分红</dt><dd>${money(row.dividends)}</dd></div>
+            <div><dt>总费用</dt><dd>${money(row.fees)}</dd></div>
+            <div><dt>最终盈亏</dt><dd class="${classByValue(row.totalPnl)}">${money(row.totalPnl)}</dd></div>
+          </dl>
+          <div class="row-actions">
+            <button class="icon-action" data-detail-symbol="${row.symbol}">详情</button>
+          </div>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderDashboard() {
+  const totals = portfolioTotals();
+  const { positions, realizedRows } = calculatePortfolio();
+  const totalFees = state.trades.reduce((sum, trade) => sum + totalFee(trade), 0);
+  const assets = totals.assets;
+  const initialAssets = (Number(state.settings.initialCash) || 0) + initialPositionCost();
+  const totalReturnRate = initialAssets > 0 ? ((assets - initialAssets) / initialAssets) * 100 : 0;
+  const totalPnl = assets - initialAssets;
+  const periodSummary = periodPnlSummary(calculatePnlCalendarRows());
+  const dayPnl = periodSummary.day;
+  const assetRealizedPnl = totalPnl - totals.floating - dividendTotal();
+  const matchedRealized = matchedPnlTotal();
+  const sellCount = state.trades.filter((trade) => trade.side === "sell").length;
+  const winCount = realizedRows.filter((row) => row.pnl > 0).length;
+  const winRate = sellCount ? (winCount / sellCount) * 100 : 0;
+
+  els.assets.textContent = money(assets);
+  els.totalReturn.textContent = `${number(totalReturnRate, 2)}%`;
+  els.cash.textContent = money(totals.cash);
+  els.marketValue.textContent = money(totals.marketValue);
+  els.cost.textContent = money(initialAssets);
+  if (els.unrealized) els.unrealized.textContent = money(totals.floating);
+  els.floating.textContent = money(totalPnl);
+  els.dayPnl.textContent = money(dayPnl);
+  els.monthPnl.textContent = money(periodSummary.month);
+  els.yearPnl.textContent = money(periodSummary.year);
+  if (els.realized) els.realized.textContent = money(assetRealizedPnl);
+  els.matchedRealized.textContent = money(matchedRealized);
+  els.totalFees.textContent = money(totalFees);
+  els.dividends.textContent = money(dividendTotal());
+  els.totalReturn.className = classByValue(totalReturnRate);
+  els.cash.className = classByValue(totals.cash);
+  if (els.unrealized) els.unrealized.className = classByValue(totals.floating);
+  els.floating.className = classByValue(totalPnl);
+  els.dayPnl.className = classByValue(dayPnl);
+  els.monthPnl.className = classByValue(periodSummary.month);
+  els.yearPnl.className = classByValue(periodSummary.year);
+  if (els.realized) els.realized.className = classByValue(assetRealizedPnl);
+  els.matchedRealized.className = classByValue(matchedRealized);
+  els.summaryCount.textContent = `${state.trades.length} 笔交易`;
+  const backupAge = daysSince(state.settings.lastBackupAt);
+  const shouldRemindBackup = !state.settings.lastBackupAt || backupAge >= 7;
+  els.backupReminder.className = shouldRemindBackup ? "backup-reminder active" : "backup-reminder";
+  els.backupReminderText.textContent = shouldRemindBackup
+    ? `${backupStatusText()} 建议导出备份，防止浏览器数据丢失。`
+    : backupStatusText();
+
+  renderAllocation(positions);
+  renderEquityCurve();
+  renderRangeSummary();
+  renderTradePairPnL();
+  renderStockTimeline();
+  renderReports();
+  renderStockDetail();
+}
+
+function renderAllocation(positions) {
+  const open = positions.filter((position) => position.quantity > 0 && position.marketValue > 0);
+  const total = open.reduce((sum, position) => sum + position.marketValue, 0);
+  const assetTotal = portfolioTotals().assets;
+  const cash = portfolioTotals().cash;
+  const colors = ["#176b87", "#c23b42", "#18805f", "#b76e00", "#5a4fcf", "#0f8b8d", "#9b5de5", "#ef476f"];
+
+  if ((!open.length || total <= 0) && cash <= 0) {
+    els.allocationPie.style.background = "#eef3f8";
+    els.allocationPie.innerHTML = `<span>暂无市值</span>`;
+    els.allocationList.innerHTML = `<div class="empty-state">输入持仓当前价后显示仓位饼图</div>`;
+    return;
+  }
+
+  const segments = [];
+  let cursor = 0;
+  if (cash > 0 && assetTotal > 0) {
+    const cashPercent = (cash / assetTotal) * 100;
+    segments.push(`#7b8794 0% ${cashPercent}%`);
+    cursor = cashPercent;
+  }
+
+  open
+    .sort((a, b) => b.marketValue - a.marketValue)
+    .forEach((position, index) => {
+      const percent = assetTotal > 0 ? (position.marketValue / assetTotal) * 100 : 0;
+      segments.push(`${colors[index % colors.length]} ${cursor}% ${cursor + percent}%`);
+      cursor += percent;
+    });
+
+  els.allocationPie.style.background = `conic-gradient(${segments.join(", ")})`;
+  els.allocationPie.innerHTML = `<span>${money(assetTotal)}</span>`;
+
+  const rows = [];
+  if (cash > 0) {
+    rows.push(`
+      <div class="allocation-row">
+        <span class="swatch cash"></span>
+        <strong>现金</strong>
+        <span>${number(assetTotal > 0 ? (cash / assetTotal) * 100 : 0, 1)}%</span>
+        <span>${money(cash)}</span>
+      </div>
+    `);
+  }
+
+  open
+    .sort((a, b) => b.marketValue - a.marketValue)
+    .forEach((position, index) => {
+      const percent = assetTotal > 0 ? (position.marketValue / assetTotal) * 100 : 0;
+      const color = colors[index % colors.length];
+      rows.push(`
+        <div class="allocation-row">
+          <span class="swatch" style="background: ${color}"></span>
+          <strong>${position.name}</strong>
+          <span>${number(percent, 1)}%</span>
+          <span>${money(position.marketValue)}</span>
+        </div>
+      `);
+    });
+
+  els.allocationList.innerHTML = rows.join("");
+}
+
+function renderEquityCurve() {
+  const chronological = calculatePnlCalendarRows();
+  const rows = chronological.slice(-8).reverse();
+  if (!els.calendarMonth.value) els.calendarMonth.value = currentMonthKey();
+  renderPnlCalendar(chronological);
+
+  els.equityCurveBody.innerHTML = rows
+    .map(
+      (row) => `
+        <tr>
+          <td>${row.date}</td>
+          <td class="${classByValue(row.periodPnl)}">${money(row.periodPnl)}</td>
+          <td class="${classByValue(row.pnl)}">${money(row.pnl)}</td>
+          <td>${money(row.assets)}</td>
+        </tr>
+      `,
+    )
+    .join("");
+
+  els.equityCurveCards.innerHTML = rows
+    .map(
+      (row) => `
+        <article class="mobile-card">
+          <div class="mobile-card-head">
+            <strong>${row.date}</strong>
+            <span class="${classByValue(row.periodPnl)}">${money(row.periodPnl)}</span>
+          </div>
+          <dl>
+            <div><dt>当日盈亏</dt><dd class="${classByValue(row.periodPnl)}">${money(row.periodPnl)}</dd></div>
+            <div><dt>累计盈亏</dt><dd class="${classByValue(row.pnl)}">${money(row.pnl)}</dd></div>
+            <div><dt>总资产</dt><dd>${money(row.assets)}</dd></div>
+          </dl>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderPnlCalendar(rows) {
+  const monthKey = els.calendarMonth.value || currentMonthKey();
+  const [year, month] = monthKey.split("-").map(Number);
+  const pnlByDate = new Map(rows.filter((row) => row.date.startsWith(monthKey)).map((row) => [row.date, row.periodPnl]));
+  const firstDay = new Date(year, month - 1, 1).getDay();
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const cells = [];
+
+  for (let index = 0; index < firstDay; index += 1) {
+    cells.push(`<div class="pnl-day empty" aria-hidden="true"></div>`);
+  }
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = `${monthKey}-${String(day).padStart(2, "0")}`;
+    const pnl = pnlByDate.get(date) || 0;
+    const tone = pnl > 0 ? "positive-day" : pnl < 0 ? "negative-day" : "";
+    cells.push(`
+      <div class="pnl-day ${tone}">
+        <time>${day}</time>
+        <span class="${classByValue(pnl)}">${pnl ? money(pnl) : "-"}</span>
+      </div>
+    `);
+  }
+
+  els.equityChart.innerHTML = `
+    <div class="pnl-calendar" aria-label="阶段盈亏日历">
+      ${["日", "一", "二", "三", "四", "五", "六"].map((day) => `<div class="calendar-weekday">${day}</div>`).join("")}
+      ${cells.join("")}
+    </div>
+  `;
+}
+
+function renderRangeSummary() {
+  if (!els.rangeStartDate.value) els.rangeStartDate.value = monthStartDate(currentMonthKey());
+  if (!els.rangeEndDate.value) els.rangeEndDate.value = today();
+
+  const summary = calculateRangeSummary(els.rangeStartDate.value, els.rangeEndDate.value);
+  const cards = [
+    { label: "区间总盈亏", value: money(summary.totalPnl), tone: classByValue(summary.totalPnl) },
+    { label: "阶段盈亏", value: money(summary.pnl), tone: classByValue(summary.pnl) },
+    { label: "匹配实现", value: money(summary.matched), tone: classByValue(summary.matched) },
+    { label: "交易次数", value: `${summary.tradeCount} 笔`, tone: "" },
+    { label: "买入金额", value: money(summary.buyAmount), tone: "" },
+    { label: "卖出金额", value: money(summary.sellAmount), tone: "" },
+    { label: "手续费", value: money(summary.fees), tone: "" },
+    { label: "分红", value: money(summary.dividends), tone: classByValue(summary.dividends) },
+  ];
+
+  els.rangeSummary.innerHTML = cards
+    .map(
+      (card) => `
+        <article class="metric">
+          <span>${card.label}</span>
+          <strong class="${card.tone}">${card.value}</strong>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderEquityChart(rows) {
+  if (!rows.length) {
+    els.equityChart.innerHTML = `<div class="empty-state">暂无资金曲线</div>`;
+    return;
+  }
+
+  const width = 520;
+  const height = 180;
+  const pad = 18;
+  const values = rows.map((row) => row.assets);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = Math.max(max - min, 1);
+  const points = rows.map((row, index) => {
+    const x = rows.length === 1 ? width / 2 : pad + (index / (rows.length - 1)) * (width - pad * 2);
+    const y = height - pad - ((row.assets - min) / span) * (height - pad * 2);
+    return { x, y, row };
+  });
+  const line = points.map((point) => `${point.x},${point.y}`).join(" ");
+  const area = `${pad},${height - pad} ${line} ${width - pad},${height - pad}`;
+  const last = points[points.length - 1];
+
+  els.equityChart.innerHTML = `
+    <svg viewBox="0 0 ${width} ${height}" role="img" aria-label="资金曲线">
+      <polyline class="equity-grid" points="${pad},${pad} ${pad},${height - pad} ${width - pad},${height - pad}" />
+      <polygon class="equity-area" points="${area}" />
+      <polyline class="equity-line" points="${line}" />
+      ${points.map((point) => `<circle class="equity-dot" cx="${point.x}" cy="${point.y}" r="3"></circle>`).join("")}
+      <text class="equity-label" x="${Math.min(last.x + 8, width - 130)}" y="${Math.max(last.y - 8, 18)}">${money(last.row.assets)}</text>
+    </svg>
+  `;
+}
+
+function renderUnmatchedDetail(row) {
+  if (!row.unmatchedDetails || !row.unmatchedDetails.length) return "";
+  const detail = row.unmatchedDetails
+    .filter((item) => Math.abs(item.quantity) > 0.000001)
+    .map((item) => `${number(item.quantity, 0)}×¥${number(item.price, 3)}`)
+    .join(" / ");
+  return detail ? `<small class="subtle-detail">${detail}</small>` : "";
+}
+
+function renderTradePairPnL() {
+  const rows = calculateTradePairPnL(els.pairStartDate.value, els.pairEndDate.value).sort((a, b) => b.pnl - a.pnl);
+
+  if (!rows.length) {
+    els.tradePairPnlBody.innerHTML = `<tr><td colspan="4" class="empty-state">暂无可匹配的买卖记录。原来持仓不参与匹配。</td></tr>`;
+    els.tradePairPnlCards.innerHTML = `<div class="empty-state">暂无可匹配的买卖记录。原来持仓不参与匹配。</div>`;
+    return;
+  }
+
+  els.tradePairPnlBody.innerHTML = rows
+    .map(
+      (row) => `
+        <tr>
+          <td>${row.name}</td>
+          <td>${number(row.matchedQuantity, 0)}</td>
+          <td class="${classByValue(row.unmatchedQuantity)}">${number(row.unmatchedQuantity, 0)}${renderUnmatchedDetail(row)}</td>
+          <td class="${classByValue(row.pnl)}">${money(row.pnl)}</td>
+        </tr>
+      `,
+    )
+    .join("");
+
+  els.tradePairPnlCards.innerHTML = rows
+    .map(
+      (row) => `
+        <article class="mobile-card">
+          <div class="mobile-card-head">
+            <strong>${row.name}</strong>
+            <span>${row.symbol}</span>
+          </div>
+          <dl>
+            <div><dt>已匹配数量</dt><dd>${number(row.matchedQuantity, 0)}</dd></div>
+            <div><dt>未匹配数量</dt><dd class="${classByValue(row.unmatchedQuantity)}">${number(row.unmatchedQuantity, 0)}${renderUnmatchedDetail(row)}</dd></div>
+            <div><dt>匹配实现盈亏</dt><dd class="${classByValue(row.pnl)}">${money(row.pnl)}</dd></div>
+          </dl>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderStockTimeline() {
+  const names = stockNameMap();
+  const symbols = [...allKnownSymbols()].sort();
+
+  if (!symbols.length) {
+    els.timelineSymbol.innerHTML = `<option value="">暂无股票</option>`;
+    els.stockTimeline.innerHTML = `<div class="empty-state">录入初始持仓或交易后显示个股时间线</div>`;
+    return;
+  }
+
+  const previous = els.timelineSymbol.value;
+  const selected = symbols.includes(previous) ? previous : symbols[0];
+  els.timelineSymbol.innerHTML = symbols.map((symbol) => `<option value="${symbol}">${symbol} ${names.get(symbol) || ""}</option>`).join("");
+  els.timelineSymbol.value = selected;
+  const events = stockEvents(selected);
+
+  els.stockTimeline.innerHTML = events.length
+    ? events
+        .map(
+          (event) => `
+            <article class="timeline-item">
+              <strong>${event.date}</strong>
+              <span class="tag ${event.tone}">${event.type}</span>
+              <div>
+                <strong>${event.detail}</strong>
+                <p>${event.note || "无备注"}</p>
+              </div>
+            </article>
+          `,
+        )
+        .join("")
+    : `<div class="empty-state">这只股票暂无记录</div>`;
+}
+
+function renderStockDetail() {
+  const symbols = [...allKnownSymbols()].sort();
+  const names = stockNameMap();
+  if (!selectedDetailSymbol && symbols.length) selectedDetailSymbol = symbols[0];
+  const symbol = selectedDetailSymbol;
+  const position = calculatePortfolio().positions.find((item) => item.symbol === symbol) || {
+    symbol,
+    name: names.get(symbol) || symbol,
+    quantity: 0,
+    cost: 0,
+    initialAverageCost: 0,
+    averageCost: 0,
+    currentPrice: state.prices[symbol] ?? "",
+    marketValue: 0,
+    floating: 0,
+    assetRealized: 0,
+    totalPnl: 0,
+    dayPnl: 0,
+    realized: 0,
+  };
+  const pair = calculateTradePairPnL().find((row) => row.symbol === symbol) || {
+    matchedQuantity: 0,
+    unmatchedQuantity: 0,
+    unmatchedDetails: [],
+    pnl: 0,
+  };
+  const matchedRealized = pair.pnl || 0;
+  const assetRealized = Number(position.assetRealized) || 0;
+  const dividends = stockDividendTotal(symbol);
+  const totalPnl = Number(position.totalPnl) || 0;
+  const investedCost = stockInvestedCost(symbol);
+  const totalReturnRate = investedCost > 0 ? (totalPnl / investedCost) * 100 : 0;
+  const status = position.quantity > 0 ? "当前持仓" : assetRealized !== 0 || stockEvents(symbol).length ? "已清仓/历史" : "暂无记录";
+  const startDate = firstStockDate(symbol);
+  const lastEvent = stockEvents(symbol)[0];
+  const endDate = position.quantity > 0 ? today() : lastEvent ? lastEvent.date : today();
+  const days = holdingDays(startDate, endDate);
+  const enhancedPnl = matchedRealized;
+  const holdStillPnl = totalPnl - matchedRealized;
+  const events = stockEvents(symbol);
+
+  els.detailTitle.textContent = `${position.name || names.get(symbol) || symbol} ${symbol}`;
+  els.detailSubtitle.textContent = `${status} · 起始 ${startDate || "-"} · ${position.quantity > 0 ? "统计至今日" : `清仓/最后记录 ${endDate || "-"}`}`;
+  els.detailMetrics.innerHTML = `
+    <article class="metric"><span>状态</span><strong>${status}</strong></article>
+    <article class="metric"><span>当前数量</span><strong>${number(position.quantity, 0)}</strong></article>
+    <article class="metric"><span>当前市值</span><strong>${money(position.marketValue)}</strong></article>
+    <article class="metric"><span>原始成本</span><strong>${money(position.initialAverageCost)}</strong></article>
+    <article class="metric"><span>现在成本</span><strong>${money(position.averageCost)}</strong></article>
+    <article class="metric"><span>持有天数</span><strong>${days}</strong></article>
+    <article class="metric"><span>低买高卖</span><strong class="${classByValue(matchedRealized)}">${money(matchedRealized)}</strong></article>
+    <article class="metric"><span>手续费</span><strong>${money(position.totalFees || 0)}</strong></article>
+    <article class="metric"><span>累计分红</span><strong>${money(dividends)}</strong></article>
+    <article class="metric"><span>总盈亏</span><strong class="${classByValue(totalPnl)}">${money(totalPnl)}</strong></article>
+    <article class="metric"><span>总收益率</span><strong class="${classByValue(totalReturnRate)}">${number(totalReturnRate, 2)}%</strong></article>
+    <article class="metric"><span>已匹配数量</span><strong>${number(pair.matchedQuantity, 0)}</strong></article>
+    <article class="metric"><span>未匹配数量</span><strong class="${classByValue(pair.unmatchedQuantity)}">${number(pair.unmatchedQuantity, 0)}</strong></article>
+    <article class="metric"><span>当日盈亏</span><strong class="${classByValue(position.dayPnl)}">${money(position.dayPnl)}</strong></article>
+  `;
+  els.detailCompare.innerHTML = `
+    <article class="compare-card">
+      <span>低买高卖实现</span>
+      <strong class="${classByValue(enhancedPnl)}">${money(enhancedPnl)}</strong>
+      <small class="subtle-detail">按买卖匹配计算，原来持仓不参与匹配。</small>
+    </article>
+    <article class="compare-card">
+      <span>持股不动</span>
+      <strong class="${classByValue(holdStillPnl)}">${money(holdStillPnl)}</strong>
+      <small class="subtle-detail">按总盈亏 - 匹配实现盈亏计算。</small>
+    </article>
+    <article class="compare-card">
+      <span>合计效果</span>
+      <strong class="${classByValue(totalPnl)}">${money(totalPnl)}</strong>
+      <small class="subtle-detail">总盈亏按资产口径计算；低买高卖匹配单独显示，不含原始持仓。</small>
+    </article>
+  `;
+  els.detailUnmatched.innerHTML = pair.unmatchedDetails && pair.unmatchedDetails.length
+    ? `<div class="mobile-card"><strong>${number(pair.unmatchedQuantity, 0)}</strong>${renderUnmatchedDetail(pair)}</div>`
+    : `<div class="empty-state">暂无未匹配买卖</div>`;
+  els.detailMatches.innerHTML = pair.matchDetails && pair.matchDetails.length
+    ? pair.matchDetails
+        .map(
+          (match) => `
+            <article class="timeline-item">
+              <strong>${match.buyDate}<br>${match.sellDate}</strong>
+              <span class="tag ${match.pnl >= 0 ? "buy" : "sell"}">${number(match.quantity, 0)}股</span>
+              <div>
+                <strong class="${classByValue(match.pnl)}">${money(match.pnl)}</strong>
+                <p>买入 ${number(match.buyPrice, 3)}，卖出 ${number(match.sellPrice, 3)}；买入成本 ${money(match.buyCost)}，卖出收入 ${money(match.sellIncome)}</p>
+              </div>
+            </article>
+          `,
+        )
+        .join("")
+    : `<div class="empty-state">暂无匹配明细</div>`;
+  els.detailTimeline.innerHTML = events.length
+    ? events
+        .map(
+          (event) => `
+            <article class="timeline-item">
+              <strong>${event.date}</strong>
+              <span class="tag ${event.tone}">${event.type}</span>
+              <div>
+                <strong>${event.detail}</strong>
+                <p>${event.note || "无备注"}</p>
+              </div>
+            </article>
+          `,
+        )
+        .join("")
+    : `<div class="empty-state">暂无时间线记录</div>`;
+}
+
+function renderReports() {
+  const symbols = [...allKnownSymbols()].sort();
+  const names = stockNameMap();
+  if (!symbols.length) {
+    els.reportSymbol.innerHTML = `<option value="">暂无股票</option>`;
+    els.reportSummaryMetrics.innerHTML = `<div class="empty-state">录入交易后显示个股复盘日历</div>`;
+    els.reportCalendar.innerHTML = "";
+    els.reportDailyBody.innerHTML = `<tr><td colspan="7" class="empty-state">暂无个股记录</td></tr>`;
+    els.reportDailyCards.innerHTML = `<div class="empty-state">暂无个股记录</div>`;
+    return;
+  }
+
+  const selected = symbols.includes(els.reportSymbol.value) ? els.reportSymbol.value : symbols[0];
+  if (!els.reportMonth.value) els.reportMonth.value = currentMonthKey();
+  els.reportSymbol.innerHTML = symbols.map((symbol) => `<option value="${symbol}">${names.get(symbol) || symbol} ${symbol}</option>`).join("");
+  els.reportSymbol.value = selected;
+
+  const monthKey = els.reportMonth.value || currentMonthKey();
+  const yearKey = monthKey.slice(0, 4);
+  const monthRows = stockReportRows(selected, monthStartDate(monthKey), monthEndDate(monthKey));
+  const yearRows = stockReportRows(selected, `${yearKey}-01-01`, `${yearKey}-12-31`);
+  const monthSummary = sumStockReportRows(monthRows);
+  const yearSummary = sumStockReportRows(yearRows);
+  const assets = portfolioTotals().assets;
+  const monthMatchRate = assets > 0 ? (monthSummary.matched / assets) * 100 : 0;
+  const yearMatchRate = assets > 0 ? (yearSummary.matched / assets) * 100 : 0;
+  const cards = [
+    { label: "本月当日盈亏合计", value: money(monthSummary.totalPnl), tone: classByValue(monthSummary.totalPnl) },
+    { label: "本月匹配实现", value: money(monthSummary.matched), tone: classByValue(monthSummary.matched) },
+    { label: "本月成交额", value: money(monthSummary.turnover), tone: "" },
+    { label: "本月匹配贡献率", value: `${number(monthMatchRate, 2)}%`, tone: classByValue(monthMatchRate) },
+    { label: "本年当日盈亏合计", value: money(yearSummary.totalPnl), tone: classByValue(yearSummary.totalPnl) },
+    { label: "本年匹配实现", value: money(yearSummary.matched), tone: classByValue(yearSummary.matched) },
+    { label: "本年成交额", value: money(yearSummary.turnover), tone: "" },
+    { label: "本年匹配贡献率", value: `${number(yearMatchRate, 2)}%`, tone: classByValue(yearMatchRate) },
+  ];
+  els.reportSummaryMetrics.innerHTML = cards
+    .map(
+      (card) => `
+        <article class="metric">
+          <span>${card.label}</span>
+          <strong class="${card.tone}">${card.value}</strong>
+        </article>
+      `,
+    )
+    .join("");
+
+  renderStockReportCalendar(monthRows, monthKey);
+  renderStockReportDailyRows(monthRows);
+}
+
+function renderStockReportCalendar(rows, monthKey) {
+  const [year, month] = monthKey.split("-").map(Number);
+  const rowByDate = new Map(rows.map((row) => [row.date, row]));
+  const firstDay = new Date(year, month - 1, 1).getDay();
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const cells = [];
+
+  for (let index = 0; index < firstDay; index += 1) {
+    cells.push(`<div class="pnl-day empty" aria-hidden="true"></div>`);
+  }
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = `${monthKey}-${String(day).padStart(2, "0")}`;
+    const row = rowByDate.get(date);
+    const pnl = row ? row.totalPnl : 0;
+    const tone = pnl > 0 ? "positive-day" : pnl < 0 ? "negative-day" : "";
+    cells.push(`
+      <div class="pnl-day stock-report-day ${tone}">
+        <time>${day}</time>
+        <span class="${classByValue(pnl)}">日 ${row ? money(pnl) : "-"}</span>
+        <small>配 ${row ? money(row.matched) : "-"}</small>
+        <small>额 ${row ? money(row.turnover) : "-"}</small>
+      </div>
+    `);
+  }
+
+  els.reportCalendar.innerHTML = `
+    <div class="pnl-calendar" aria-label="个股盈亏日历">
+      ${["日", "一", "二", "三", "四", "五", "六"].map((day) => `<div class="calendar-weekday">${day}</div>`).join("")}
+      ${cells.join("")}
+    </div>
+  `;
+}
+
+function renderStockReportDailyRows(rows) {
+  if (!rows.length) {
+    els.reportDailyBody.innerHTML = `<tr><td colspan="7" class="empty-state">这个月份暂无个股交易或匹配记录</td></tr>`;
+    els.reportDailyCards.innerHTML = `<div class="empty-state">这个月份暂无个股交易或匹配记录</div>`;
+    return;
+  }
+
+  els.reportDailyBody.innerHTML = rows
+    .map(
+      (row) => `
+        <tr>
+          <td>${row.date}</td>
+          <td class="${classByValue(row.totalPnl)}">${money(row.totalPnl)}</td>
+          <td class="${classByValue(row.matched)}">${money(row.matched)}</td>
+          <td>${money(row.turnover)}</td>
+          <td>${money(row.buyAmount)}</td>
+          <td>${money(row.sellAmount)}</td>
+          <td>${money(row.fees)}</td>
+        </tr>
+      `,
+    )
+    .join("");
+
+  els.reportDailyCards.innerHTML = rows
+    .map(
+      (row) => `
+        <article class="mobile-card">
+          <div class="mobile-card-head">
+            <strong>${row.date}</strong>
+            <span class="${classByValue(row.totalPnl)}">当日 ${money(row.totalPnl)}</span>
+          </div>
+          <dl>
+            <div><dt>匹配实现</dt><dd class="${classByValue(row.matched)}">${money(row.matched)}</dd></div>
+            <div><dt>成交额</dt><dd>${money(row.turnover)}</dd></div>
+            <div><dt>买入</dt><dd>${money(row.buyAmount)}</dd></div>
+            <div><dt>卖出</dt><dd>${money(row.sellAmount)}</dd></div>
+            <div><dt>手续费</dt><dd>${money(row.fees)}</dd></div>
+          </dl>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderPerformanceSummary() {
+  els.summaryKindButtons.forEach((button) => button.classList.toggle("active", button.dataset.summaryKind === summaryPeriodKind));
+  const options = periodOptions(summaryPeriodKind);
+  const selected = options.includes(els.summaryPeriod.value) ? els.summaryPeriod.value : options[0];
+  els.summaryPeriod.innerHTML = options.map((key) => `<option value="${key}">${periodLabel(summaryPeriodKind, key)}</option>`).join("");
+  els.summaryPeriod.value = selected;
+
+  const overview = calculatePeriodOverview(summaryPeriodKind, selected);
+  const rows = calculatePeriodStockRows(summaryPeriodKind, selected);
+  renderPerformanceMetrics(overview);
+  renderOverallInsights(overview, rows);
+  renderPerformanceStockRows(rows);
+  renderStockInsights(rows);
+}
+
+function renderPerformanceMetrics(overview) {
+  const cards = [
+    { label: "总盈亏", value: money(overview.totalPnl), tone: classByValue(overview.totalPnl) },
+    { label: "收益率", value: overview.returnRate === null ? "-" : `${number(overview.returnRate, 2)}%`, tone: classByValue(overview.returnRate || 0) },
+    { label: "匹配实现", value: money(overview.matched), tone: classByValue(overview.matched) },
+    { label: "分红", value: money(overview.dividends), tone: classByValue(overview.dividends) },
+    { label: "手续费", value: money(overview.fees), tone: "" },
+    { label: "交易次数", value: `${overview.tradeCount} 笔`, tone: "" },
+    { label: "胜率", value: overview.matchCount ? `${number(overview.winRate, 1)}%` : "-", tone: classByValue(overview.winRate - 50) },
+    { label: "买入金额", value: money(overview.buyAmount), tone: "" },
+    { label: "卖出金额", value: money(overview.sellAmount), tone: "" },
+    { label: "对比上期", value: `${summaryToneText(overview.change)} ${money(overview.change)}`, tone: classByValue(overview.change) },
+  ];
+
+  els.summaryOverallMetrics.innerHTML = cards
+    .map(
+      (card) => `
+        <article class="metric">
+          <span>${card.label}</span>
+          <strong class="${card.tone}">${card.value}</strong>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderOverallInsights(overview, stockRows) {
+  const absParts = [
+    { label: "低买高卖实现", value: overview.matched },
+    { label: "现金分红", value: overview.dividends },
+  ].sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+  const main = absParts[0] || { label: "暂无明显来源", value: 0 };
+  const feePressure = Math.abs(overview.totalPnl) > 0 ? (overview.fees / Math.max(Math.abs(overview.totalPnl), 1)) * 100 : 0;
+  const maxAllocation = stockRows.length ? Math.max(...stockRows.map((row) => row.allocation)) : 0;
+  const tradeText = overview.matchCount
+    ? `本周期完成 ${overview.matchCount} 组买卖匹配，胜率 ${number(overview.winRate, 1)}%。${overview.winRate >= 55 ? "交易结果偏积极。" : overview.winRate <= 40 ? "胜率偏低，建议复盘亏损匹配。" : "胜率中性，重点看单笔盈亏质量。"}`
+    : "本周期还没有完成买卖匹配，低买高卖效果暂时无法评价。";
+  const insights = [
+    `本周期总盈亏为 ${money(overview.totalPnl)}，主要影响来自${main.label}：${money(main.value)}。`,
+    tradeText,
+    feePressure > 8
+      ? `手续费为 ${money(overview.fees)}，相对盈亏占比偏高，频繁交易可能正在侵蚀收益。`
+      : `手续费为 ${money(overview.fees)}，目前没有明显拖累整体表现。`,
+    maxAllocation > 45
+      ? `最大个股仓位约 ${number(maxAllocation, 1)}%，仓位较集中，单只股票波动会明显影响账户。`
+      : `最大个股仓位约 ${number(maxAllocation, 1)}%，仓位集中度相对可控。`,
+    `相比上一周期，表现${summaryToneText(overview.change)}，变化为 ${money(overview.change)}。`,
+  ];
+
+  els.summaryOverallInsights.innerHTML = insights.map((item) => `<li>${item}</li>`).join("");
+}
+
+function renderPerformanceStockRows(rows) {
+  if (!rows.length) {
+    els.summaryStockBody.innerHTML = `<tr><td colspan="8" class="empty-state">暂无个股总结数据</td></tr>`;
+    els.summaryStockCards.innerHTML = `<div class="empty-state">暂无个股总结数据</div>`;
+    return;
+  }
+
+  els.summaryStockBody.innerHTML = rows
+    .map(
+      (row) => `
+        <tr>
+          <td>${row.name}<small class="subtle-detail">${row.symbol}</small></td>
+          <td class="${classByValue(row.totalPnl)}">${money(row.totalPnl)}</td>
+          <td class="${classByValue(row.matched)}">${money(row.matched)}</td>
+          <td>${money(row.dividends)}</td>
+          <td>${money(row.fees)}</td>
+          <td>${row.tradeCount}</td>
+          <td>${row.matchCount ? `${number(row.winRate, 1)}%` : "-"}</td>
+          <td>${number(row.allocation, 1)}%</td>
+        </tr>
+      `,
+    )
+    .join("");
+
+  els.summaryStockCards.innerHTML = rows
+    .map(
+      (row) => `
+        <article class="mobile-card">
+          <div class="mobile-card-head">
+            <strong>${row.name}</strong>
+            <span>${row.symbol}</span>
+          </div>
+          <dl>
+            <div><dt>总盈亏</dt><dd class="${classByValue(row.totalPnl)}">${money(row.totalPnl)}</dd></div>
+            <div><dt>匹配实现</dt><dd class="${classByValue(row.matched)}">${money(row.matched)}</dd></div>
+            <div><dt>分红</dt><dd>${money(row.dividends)}</dd></div>
+            <div><dt>手续费</dt><dd>${money(row.fees)}</dd></div>
+            <div><dt>交易</dt><dd>${row.tradeCount}</dd></div>
+            <div><dt>胜率</dt><dd>${row.matchCount ? `${number(row.winRate, 1)}%` : "-"}</dd></div>
+            <div><dt>仓位占比</dt><dd>${number(row.allocation, 1)}%</dd></div>
+          </dl>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderStockInsights(rows) {
+  if (!rows.length) {
+    els.summaryStockInsights.innerHTML = `<li>暂无个股数据，开始记录交易或录入当前价后会生成分析。</li>`;
+    return;
+  }
+
+  const best = rows[0];
+  const worst = rows[rows.length - 1];
+  const bestMatched = [...rows].sort((a, b) => b.matched - a.matched)[0];
+  const feeHeavy = [...rows].sort((a, b) => b.fees - a.fees)[0];
+  const heavyPosition = [...rows].sort((a, b) => b.allocation - a.allocation)[0];
+  const insights = [
+    `贡献最大的是 ${best.name}，本周期总盈亏 ${money(best.totalPnl)}。`,
+    worst.totalPnl < 0 ? `拖累最大的是 ${worst.name}，本周期总盈亏 ${money(worst.totalPnl)}，建议重点复盘买卖点和持仓理由。` : "本周期没有明显亏损拖累的个股。",
+    bestMatched && bestMatched.matched > 0
+      ? `低买高卖效果最好的是 ${bestMatched.name}，匹配实现 ${money(bestMatched.matched)}。`
+      : "本周期低买高卖尚未形成明显正贡献。",
+    feeHeavy && feeHeavy.fees > 0
+      ? `${feeHeavy.name} 的费用最高，为 ${money(feeHeavy.fees)}，交易频率和单笔收益需要一起看。`
+      : "本周期个股费用压力不明显。",
+    heavyPosition && heavyPosition.allocation > 40
+      ? `${heavyPosition.name} 仓位占比 ${number(heavyPosition.allocation, 1)}%，属于重点影响账户波动的核心持仓。`
+      : "当前没有单只股票仓位特别突出的风险信号。",
+  ];
+
+  els.summaryStockInsights.innerHTML = insights.map((item) => `<li>${item}</li>`).join("");
+}
+
+function renderSettings() {
+  els.initialCash.value = state.settings.initialCash;
+  els.commissionRate.value = state.settings.commissionRate;
+  els.minCommission.value = state.settings.minCommission;
+  els.stampRate.value = state.settings.stampRate;
+  els.transferRate.value = state.settings.transferRate;
+  els.backupStatus.textContent = backupStatusText();
+  renderCorporateActions();
+
+  if (!state.initialPositions.length) {
+    els.initialPositionsBody.innerHTML = `<tr><td colspan="8" class="empty-state">暂无初始持仓</td></tr>`;
+    els.initialPositionsCards.innerHTML = `<div class="empty-state">暂无初始持仓</div>`;
+    return;
+  }
+
+  els.initialPositionsBody.innerHTML = state.initialPositions
+    .map(
+      (item) => `
+        <tr>
+          <td>${item.date || "-"}</td>
+          <td>${item.symbol}</td>
+          <td>${item.name}</td>
+          <td>${number(item.quantity, 0)}</td>
+          <td>${money(item.cost)}</td>
+          <td>${money(item.quantity > 0 ? item.cost / item.quantity : 0)}</td>
+          <td>${state.prices[item.symbol] ? money(state.prices[item.symbol]) : "-"}</td>
+          <td>
+            <div class="row-actions">
+              <button class="icon-action" data-edit-initial="${item.id}">编辑</button>
+              <button class="icon-action" data-delete-initial="${item.id}">删除</button>
+            </div>
+          </td>
+        </tr>
+      `,
+    )
+    .join("");
+
+  els.initialPositionsCards.innerHTML = state.initialPositions
+    .map(
+      (item) => `
+        <article class="mobile-card">
+          <div class="mobile-card-head">
+            <strong>${item.name}</strong>
+            <span>${item.symbol}</span>
+          </div>
+          <dl>
+            <div><dt>日期</dt><dd>${item.date || "-"}</dd></div>
+            <div><dt>数量</dt><dd>${number(item.quantity, 0)}</dd></div>
+            <div><dt>总成本</dt><dd>${money(item.cost)}</dd></div>
+            <div><dt>平均成本</dt><dd>${money(item.quantity > 0 ? item.cost / item.quantity : 0)}</dd></div>
+            <div><dt>当前价</dt><dd>${state.prices[item.symbol] ? money(state.prices[item.symbol]) : "-"}</dd></div>
+          </dl>
+          <div class="row-actions">
+            <button class="icon-action" data-edit-initial="${item.id}">编辑</button>
+            <button class="icon-action" data-delete-initial="${item.id}">删除</button>
+          </div>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderCorporateActions() {
+  const rows = [...state.corporateActions].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
+  if (!rows.length) {
+    els.corporateActionsBody.innerHTML = `<tr><td colspan="7" class="empty-state">暂无分红或送股记录</td></tr>`;
+    els.corporateActionsCards.innerHTML = `<div class="empty-state">暂无分红或送股记录</div>`;
+    return;
+  }
+
+  els.corporateActionsBody.innerHTML = rows
+    .map(
+      (action) => `
+        <tr>
+          <td>${action.date || "-"}</td>
+          <td>${action.symbol}</td>
+          <td>${action.name}</td>
+          <td>${action.type === "dividend" ? "现金分红" : "送股/转增"}</td>
+          <td>${action.type === "dividend" ? money(action.value) : number(action.value, 0)}</td>
+          <td>${action.note || "-"}</td>
+          <td><button class="icon-action" data-delete-action="${action.id}">删除</button></td>
+        </tr>
+      `,
+    )
+    .join("");
+
+  els.corporateActionsCards.innerHTML = rows
+    .map(
+      (action) => `
+        <article class="mobile-card">
+          <div class="mobile-card-head">
+            <strong>${action.name}</strong>
+            <span>${action.symbol}</span>
+          </div>
+          <dl>
+            <div><dt>日期</dt><dd>${action.date || "-"}</dd></div>
+            <div><dt>类型</dt><dd>${action.type === "dividend" ? "现金分红" : "送股/转增"}</dd></div>
+            <div><dt>金额/数量</dt><dd>${action.type === "dividend" ? money(action.value) : number(action.value, 0)}</dd></div>
+            <div><dt>备注</dt><dd>${action.note || "-"}</dd></div>
+          </dl>
+          <div class="row-actions">
+            <button class="icon-action" data-delete-action="${action.id}">删除</button>
+          </div>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function addCorporateAction() {
+  const action = {
+    id: uid(),
+    date: els.actionDate.value || today(),
+    symbol: normalizeSymbol(els.actionSymbol.value),
+    name: els.actionName.value.trim(),
+    type: els.actionType.value,
+    value: Number(els.actionValue.value) || 0,
+    note: els.actionNote.value.trim(),
+  };
+
+  if (!action.symbol || !action.name || action.value <= 0) {
+    alert("请填写代码、名称、金额或数量。");
+    return;
+  }
+
+  state.corporateActions.push(action);
+  els.actionDate.value = today();
+  els.actionSymbol.value = "";
+  els.actionName.value = "";
+  els.actionType.value = "dividend";
+  els.actionValue.value = "";
+  els.actionNote.value = "";
+  save();
+  renderAll();
+}
+
+function saveAccountSettings() {
+  state.settings.initialCash = readAmountInput(els.initialCash);
+  save();
+  const totals = portfolioTotals();
+  const assets = totals.assets;
+  const initialAssets = state.settings.initialCash + initialPositionCost();
+  const totalReturnRate = initialAssets > 0 ? ((assets - initialAssets) / initialAssets) * 100 : 0;
+
+  els.cash.textContent = money(totals.cash);
+  els.assets.textContent = money(assets);
+  els.totalReturn.textContent = `${number(totalReturnRate, 2)}%`;
+  els.cash.className = classByValue(totals.cash);
+  els.totalReturn.className = classByValue(totalReturnRate);
+  els.accountSaveStatus.textContent = "已保存";
+  window.setTimeout(() => {
+    els.accountSaveStatus.textContent = "";
+  }, 1500);
+  renderAll();
+}
+
+function renderAll() {
+  const renderers = [renderDashboard, renderPerformanceSummary, renderPositions, renderRecords, renderSettings];
+  for (const render of renderers) {
+    try {
+      render();
+    } catch (error) {
+      console.error("Render failed:", error);
+    }
+  }
+}
+
+function editTrade(id) {
+  const trade = state.trades.find((item) => item.id === id);
+  if (!trade) return;
+
+  els.editingId.value = trade.id;
+  els.tradeDate.value = trade.date;
+  els.symbol.value = trade.symbol;
+  els.name.value = trade.name;
+  els.side.value = trade.side;
+  els.price.value = trade.price;
+  els.quantity.value = trade.quantity;
+  els.note.value = trade.note;
+  els.formHeading.textContent = "编辑交易";
+  document.querySelector("#save-trade").textContent = "更新交易";
+  updatePreview();
+  setView("trade-form");
+}
+
+function deleteTrade(id) {
+  if (!confirm("确定删除这笔交易吗？")) return;
+  state.trades = state.trades.filter((item) => item.id !== id);
+  save();
+  renderAll();
+}
+
+function resetInitialPositionForm() {
+  els.editingInitialId.value = "";
+  els.initialSymbol.value = "";
+  els.initialName.value = "";
+  els.initialQuantity.value = "";
+  els.initialCost.value = "";
+  els.initialPrice.value = "";
+  els.initialDate.value = today();
+  els.initialPositionMode.textContent = "用于录入开始使用工具之前已经持有的股票";
+  document.querySelector("#add-initial-position").textContent = "添加初始持仓";
+}
+
+function editInitialPosition(id) {
+  const item = state.initialPositions.find((position) => position.id === id);
+  if (!item) return;
+
+  els.editingInitialId.value = item.id;
+  els.initialSymbol.value = item.symbol;
+  els.initialName.value = item.name;
+  els.initialQuantity.value = item.quantity;
+  els.initialCost.value = item.cost;
+  els.initialPrice.value = state.prices[item.symbol] || "";
+  els.initialDate.value = item.date || today();
+  els.initialPositionMode.textContent = "正在编辑初始持仓，保存后会重新计算账户";
+  document.querySelector("#add-initial-position").textContent = "保存初始持仓";
+  setView("settings");
+}
+
+function addInitialPosition() {
+  const item = {
+    id: els.editingInitialId.value || uid(),
+    date: els.initialDate.value || today(),
+    symbol: normalizeSymbol(els.initialSymbol.value),
+    name: els.initialName.value.trim(),
+    quantity: Number(els.initialQuantity.value),
+    cost: Number(els.initialCost.value),
+  };
+
+  if (!item.symbol || !item.name || item.quantity <= 0 || item.cost < 0) {
+    alert("请完整填写初始持仓的代码、名称、数量和总成本。");
+    return;
+  }
+
+  const index = state.initialPositions.findIndex((position) => position.id === item.id);
+  if (index >= 0) state.initialPositions[index] = item;
+  else state.initialPositions.push(item);
+
+  if (els.initialPrice.value) state.prices[item.symbol] = els.initialPrice.value;
+  resetInitialPositionForm();
+  save();
+  renderAll();
+}
+
+function fillSampleData() {
+  if ((state.trades.length || state.initialPositions.length) && !confirm("示例数据会追加到当前记录中，继续吗？")) return;
+
+  state.settings.initialCash = state.settings.initialCash || 100000;
+  state.initialPositions.push({
+    id: uid(),
+    date: "2026-04-01",
+    symbol: "600519",
+    name: "贵州茅台",
+    quantity: 100,
+    cost: 168000,
+  });
+  state.trades.push(
+    {
+      id: uid(),
+      date: "2026-04-16",
+      symbol: "600519",
+      name: "贵州茅台",
+      side: "sell",
+      price: 1712,
+      quantity: 40,
+      note: "部分止盈",
+      createdAt: Date.now(),
+    },
+    {
+      id: uid(),
+      date: "2026-04-19",
+      symbol: "300750",
+      name: "宁德时代",
+      side: "buy",
+      price: 188.2,
+      quantity: 300,
+      note: "回调试仓",
+      createdAt: Date.now() + 1,
+    },
+    {
+      id: uid(),
+      date: "2026-04-22",
+      symbol: "600519",
+      name: "贵州茅台",
+      side: "buy",
+      price: 1668,
+      quantity: 20,
+      note: "卖出后低价接回",
+      createdAt: Date.now() + 2,
+    },
+  );
+  state.prices = { ...state.prices, 600519: 1720, 300750: 184.5 };
+  save();
+  renderAll();
+}
+
+function downloadBlob(content, type, filename) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportData() {
+  downloadBlob(JSON.stringify(state, null, 2), "application/json", `ashare-trading-journal-${today()}.json`);
+  state.settings.lastBackupAt = new Date().toISOString();
+  save();
+  renderAll();
+}
+
+function csvCell(value) {
+  const text = String(value ?? "");
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+function exportCsv() {
+  const rows = [
+    ["日期", "代码", "名称", "类型", "价格", "数量", "金额", "佣金", "印花税", "过户费", "总费用", "备注"],
+    ...state.trades.map((trade) => {
+      const fees = tradeFees(trade);
+      const fee = fees.commission + fees.stampTax + fees.transferFee;
+      return [
+        trade.date,
+        trade.symbol,
+        trade.name,
+        trade.side === "buy" ? "买入" : "卖出",
+        trade.price,
+        trade.quantity,
+        tradeAmount(trade),
+        fees.commission,
+        fees.stampTax,
+        fees.transferFee,
+        fee,
+        trade.note || "",
+      ];
+    }),
+    ...state.corporateActions.map((action) => [
+      action.date || "",
+      action.symbol,
+      action.name,
+      action.type === "dividend" ? "现金分红" : "送股/转增",
+      "",
+      action.type === "bonus" ? action.value : "",
+      action.type === "dividend" ? action.value : "",
+      "",
+      "",
+      "",
+      "",
+      action.note || "",
+    ]),
+  ];
+  const body = rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
+  downloadBlob(`\ufeff${body}`, "text/csv;charset=utf-8", `ashare-trading-flow-${today()}.csv`);
+}
+
+function importData(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const next = JSON.parse(reader.result);
+      state.trades = Array.isArray(next.trades) ? next.trades : [];
+      state.prices = next.prices && typeof next.prices === "object" ? next.prices : {};
+      state.previousCloses = next.previousCloses && typeof next.previousCloses === "object" ? next.previousCloses : {};
+      state.initialPositions = Array.isArray(next.initialPositions) ? next.initialPositions : [];
+      state.corporateActions = Array.isArray(next.corporateActions) ? next.corporateActions : [];
+      state.settings = { ...defaultSettings, ...(next.settings || {}) };
+      save();
+      renderAll();
+      alert("导入完成");
+    } catch {
+      alert("导入失败，请确认文件是本工具导出的 JSON。");
+    }
+  };
+  reader.readAsText(file);
+}
+
+els.navButtons.forEach((button) => {
+  button.addEventListener("click", () => setView(button.dataset.view));
+});
+
+document.querySelectorAll("[data-jump]").forEach((button) => {
+  button.addEventListener("click", () => setView(button.dataset.jump));
+});
+
+els.form.addEventListener("input", updatePreview);
+els.side.addEventListener("change", updatePreview);
+els.symbol.addEventListener("change", () => fillStockInfo(els.symbol, els.name, els.price));
+els.symbol.addEventListener("blur", () => fillStockInfo(els.symbol, els.name, els.price));
+els.initialSymbol.addEventListener("change", () => fillStockInfo(els.initialSymbol, els.initialName, els.initialPrice));
+els.initialSymbol.addEventListener("blur", () => fillStockInfo(els.initialSymbol, els.initialName, els.initialPrice));
+els.actionSymbol.addEventListener("change", () => fillStockInfo(els.actionSymbol, els.actionName, null));
+els.actionSymbol.addEventListener("blur", () => fillStockInfo(els.actionSymbol, els.actionName, null));
+els.form.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const trade = readTradeForm();
+
+  if (!trade.date || !trade.symbol || !trade.name || trade.price <= 0 || trade.quantity <= 0) {
+    alert("请完整填写日期、代码、名称、价格和数量。");
+    return;
+  }
+
+  const index = state.trades.findIndex((item) => item.id === trade.id);
+  if (index >= 0) state.trades[index] = trade;
+  else state.trades.push(trade);
+
+  save();
+  resetForm();
+  renderAll();
+  setView("records");
+});
+
+document.querySelector("#reset-form").addEventListener("click", resetForm);
+document.querySelector("#sample-data").addEventListener("click", fillSampleData);
+document.querySelector("#export-data").addEventListener("click", exportData);
+document.querySelector("#export-csv").addEventListener("click", exportCsv);
+document.querySelector("#save-account").addEventListener("click", saveAccountSettings);
+els.initialCash.addEventListener("input", saveAccountSettings);
+els.initialCash.addEventListener("change", saveAccountSettings);
+document.querySelector("#save-fees").addEventListener("click", () => {
+  state.settings.commissionRate = Number(els.commissionRate.value) || 0;
+  state.settings.minCommission = Number(els.minCommission.value) || 0;
+  state.settings.stampRate = Number(els.stampRate.value) || 0;
+  state.settings.transferRate = Number(els.transferRate.value) || 0;
+  save();
+  updatePreview();
+  renderAll();
+});
+document.querySelector("#add-initial-position").addEventListener("click", addInitialPosition);
+optionalElement("#reset-initial-position").addEventListener("click", resetInitialPositionForm);
+optionalElement("#add-corporate-action").addEventListener("click", addCorporateAction);
+optionalElement("#clear-initial-positions").addEventListener("click", () => {
+  if (!confirm("确定清空全部初始持仓吗？流水记录不会删除。")) return;
+  state.initialPositions = [];
+  resetInitialPositionForm();
+  save();
+  renderAll();
+});
+optionalElement("#refresh-quotes").addEventListener("click", refreshQuotes);
+document.querySelector("#clear-data").addEventListener("click", () => {
+  if (!confirm("确定清空全部数据吗？")) return;
+  state.trades = [];
+  state.prices = {};
+  state.previousCloses = {};
+  state.initialPositions = [];
+  state.corporateActions = [];
+  state.settings = { ...defaultSettings };
+  save();
+  renderAll();
+});
+
+document.querySelector("#import-data").addEventListener("change", (event) => {
+  const [file] = event.target.files;
+  if (file) importData(file);
+  event.target.value = "";
+});
+
+els.recordFilter.addEventListener("input", renderRecords);
+els.calendarMonth.addEventListener("change", renderEquityCurve);
+els.reportSymbol.addEventListener("change", renderReports);
+els.reportMonth.addEventListener("change", renderReports);
+els.rangeStartDate.addEventListener("change", renderRangeSummary);
+els.rangeEndDate.addEventListener("change", renderRangeSummary);
+els.summaryKindButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    summaryPeriodKind = button.dataset.summaryKind || "week";
+    els.summaryPeriod.value = "";
+    renderPerformanceSummary();
+  });
+});
+els.summaryPeriod.addEventListener("change", renderPerformanceSummary);
+els.pairStartDate.addEventListener("change", renderTradePairPnL);
+els.pairEndDate.addEventListener("change", renderTradePairPnL);
+els.timelineSymbol.addEventListener("change", renderStockTimeline);
+els.openTimelineDetail.addEventListener("click", () => openStockDetail(els.timelineSymbol.value || selectedDetailSymbol));
+els.recordsBody.addEventListener("click", (event) => {
+  const editId = event.target.dataset.edit;
+  const deleteId = event.target.dataset.delete;
+  const deleteActionId = event.target.dataset.deleteAction;
+  if (editId) editTrade(editId);
+  if (deleteId) deleteTrade(deleteId);
+  if (deleteActionId) {
+    state.corporateActions = state.corporateActions.filter((action) => action.id !== deleteActionId);
+    save();
+    renderAll();
+  }
+});
+
+els.recordsCards.addEventListener("click", (event) => {
+  const editId = event.target.dataset.edit;
+  const deleteId = event.target.dataset.delete;
+  const deleteActionId = event.target.dataset.deleteAction;
+  if (editId) editTrade(editId);
+  if (deleteId) deleteTrade(deleteId);
+  if (deleteActionId) {
+    state.corporateActions = state.corporateActions.filter((action) => action.id !== deleteActionId);
+    save();
+    renderAll();
+  }
+});
+
+els.positionsBody.addEventListener("input", (event) => {
+  const symbol = event.target.dataset.priceSymbol;
+  if (!symbol) return;
+  state.prices[symbol] = event.target.value;
+  save();
+  renderDashboard();
+  renderPerformanceSummary();
+});
+
+els.positionsCards.addEventListener("input", (event) => {
+  const symbol = event.target.dataset.priceSymbol;
+  if (!symbol) return;
+  state.prices[symbol] = event.target.value;
+  save();
+  renderDashboard();
+  renderPerformanceSummary();
+});
+
+els.positionsBody.addEventListener("click", (event) => {
+  const symbol = event.target.dataset.detailSymbol;
+  if (symbol) openStockDetail(symbol);
+});
+
+els.positionsCards.addEventListener("click", (event) => {
+  const symbol = event.target.dataset.detailSymbol;
+  if (symbol) openStockDetail(symbol);
+});
+
+els.closedPositionsBody.addEventListener("click", (event) => {
+  const symbol = event.target.dataset.detailSymbol;
+  if (symbol) openStockDetail(symbol);
+});
+
+els.closedPositionsCards.addEventListener("click", (event) => {
+  const symbol = event.target.dataset.detailSymbol;
+  if (symbol) openStockDetail(symbol);
+});
+
+els.positionsBody.addEventListener("change", (event) => {
+  if (event.target.dataset.priceSymbol) renderPositions();
+});
+
+els.positionsCards.addEventListener("change", (event) => {
+  if (event.target.dataset.priceSymbol) renderPositions();
+});
+
+els.initialPositionsBody.addEventListener("click", (event) => {
+  const editId = event.target.dataset.editInitial;
+  const id = event.target.dataset.deleteInitial;
+  if (editId) {
+    editInitialPosition(editId);
+    return;
+  }
+  if (!id) return;
+  state.initialPositions = state.initialPositions.filter((item) => item.id !== id);
+  save();
+  renderAll();
+});
+
+els.initialPositionsCards.addEventListener("click", (event) => {
+  const editId = event.target.dataset.editInitial;
+  const id = event.target.dataset.deleteInitial;
+  if (editId) {
+    editInitialPosition(editId);
+    return;
+  }
+  if (!id) return;
+  state.initialPositions = state.initialPositions.filter((item) => item.id !== id);
+  save();
+  renderAll();
+});
+
+els.corporateActionsBody.addEventListener("click", (event) => {
+  const id = event.target.dataset.deleteAction;
+  if (!id) return;
+  state.corporateActions = state.corporateActions.filter((action) => action.id !== id);
+  save();
+  renderAll();
+});
+
+els.corporateActionsCards.addEventListener("click", (event) => {
+  const id = event.target.dataset.deleteAction;
+  if (!id) return;
+  state.corporateActions = state.corporateActions.filter((action) => action.id !== id);
+  save();
+  renderAll();
+});
+
+load();
+resetForm();
+resetInitialPositionForm();
+els.actionDate.value = today();
+renderAll();
+if (location.protocol.startsWith("http")) {
+  window.setTimeout(refreshQuotes, 800);
+  window.setInterval(() => {
+    if (!document.hidden) refreshQuotes();
+  }, 60000);
+}
+
+    </script>
+  </body>
+</html>
+
