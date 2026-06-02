@@ -1320,7 +1320,7 @@ td {
 
             <section class="panel">
               <div class="panel-header">
-                <h3>阶段盈亏日历</h3>
+                <h3>收盘盈亏日历</h3>
                 <label class="search-box">
                   <span>年月</span>
                   <input type="month" id="calendar-month" />
@@ -2750,6 +2750,22 @@ function calculatePnlCalendarRows() {
   });
 }
 
+function calculateSnapshotCalendarRows() {
+  const rows = [...state.closeSnapshots]
+    .filter((snapshot) => validDateString(snapshot.date))
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((snapshot) => ({
+      date: snapshot.date,
+      cash: Number(snapshot.cash) || 0,
+      marketValue: Number(snapshot.marketValue) || 0,
+      assets: Number(snapshot.assets) || 0,
+      pnl: Number(snapshot.totalPnl) || 0,
+      periodPnl: Number(snapshot.dayPnl) || 0,
+      fromSnapshot: true,
+    }));
+  return rows.length ? rows : calculatePnlCalendarRows();
+}
+
 function calculateMaxDrawdown(rows) {
   const datedRows = rows.filter((row) => Number(row.assets) > 0);
   if (!datedRows.length) {
@@ -3707,7 +3723,7 @@ function renderDashboard() {
   const initialAssets = (Number(state.settings.initialCash) || 0) + initialPositionCost();
   const totalReturnRate = initialAssets > 0 ? ((assets - initialAssets) / initialAssets) * 100 : 0;
   const totalPnl = assets - initialAssets;
-  const periodSummary = periodPnlSummary(calculatePnlCalendarRows());
+  const periodSummary = periodPnlSummary(calculateSnapshotCalendarRows());
   const dayPnl = periodSummary.day;
   const assetRealizedPnl = totalPnl - totals.floating - dividendTotal();
   const matchedRealized = matchedPnlTotal();
@@ -3820,7 +3836,7 @@ function renderAllocation(positions) {
 }
 
 function renderEquityCurve() {
-  const chronological = calculatePnlCalendarRows();
+  const chronological = calculateSnapshotCalendarRows();
   const rows = chronological.slice(-8).reverse();
   const drawdown = calculateMaxDrawdown(chronological);
   if (!els.calendarMonth.value) els.calendarMonth.value = currentMonthKey();
@@ -3990,6 +4006,8 @@ function saveCloseSnapshot() {
   save();
   els.closeSnapshotStatus.textContent = `已记录 ${date} 收盘，总资产 ${money(snapshot.assets)}。`;
   renderCloseSnapshots();
+  renderDashboard();
+  renderEquityCurve();
 }
 
 function deleteCloseSnapshot(id) {
@@ -3998,6 +4016,8 @@ function deleteCloseSnapshot(id) {
   state.closeSnapshots = state.closeSnapshots.filter((item) => item.id !== id);
   save();
   renderCloseSnapshots();
+  renderDashboard();
+  renderEquityCurve();
 }
 
 function renderCloseSnapshotPositions(snapshot) {
