@@ -12,6 +12,9 @@
     <link rel="icon" href="./icon-512.png" type="image/png" />
     <link rel="shortcut icon" href="./icon-512.png" type="image/png" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Ashare" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <style>
 :root {
   color-scheme: dark;
@@ -318,6 +321,13 @@ button {
 
 .metric strong {
   font-size: 24px;
+}
+
+.metric-action {
+  min-height: 28px;
+  margin-top: 10px;
+  padding: 3px 10px;
+  font-size: 12px;
 }
 
 .range-summary {
@@ -1872,8 +1882,9 @@ td {
               <strong id="metric-total-fees">¥0.00</strong>
             </article>
             <article class="metric">
-              <span>累计分红</span>
+              <span>累计净分红</span>
               <strong id="metric-dividends">¥0.00</strong>
+              <button class="icon-action metric-action" type="button" data-modal-open="dividend-modal">明细</button>
             </article>
           </div>
 
@@ -2002,6 +2013,36 @@ td {
               </table>
             </div>
             <div class="mobile-list" id="trade-pair-pnl-cards"></div>
+          </div>
+        </section>
+
+        <section class="app-modal" id="dividend-modal" hidden>
+          <div class="modal-card">
+            <div class="modal-head">
+              <div>
+                <h3>分红明细</h3>
+                <span>按股票汇总净分红，便于查看总分红与个股贡献</span>
+              </div>
+              <button class="icon-action" type="button" data-modal-close>关闭</button>
+            </div>
+            <div class="range-summary" id="dividend-summary"></div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>股票</th>
+                    <th>代码</th>
+                    <th>税前分红</th>
+                    <th>分红税</th>
+                    <th>净分红</th>
+                    <th>次数</th>
+                    <th>最近日期</th>
+                  </tr>
+                </thead>
+                <tbody id="dividend-detail-body"></tbody>
+              </table>
+            </div>
+            <div class="mobile-list" id="dividend-detail-cards"></div>
           </div>
         </section>
 
@@ -2580,8 +2621,9 @@ td {
           <section class="panel spacing-top">
             <div class="panel-header">
               <h3>分红与送股/转增</h3>
-              <span>现金分红增加现金；送股/转增增加数量且不增加成本</span>
+              <span>现金分红按净分红增加现金；送股/转增增加数量且不增加成本</span>
             </div>
+            <input type="hidden" id="editing-action-id" />
             <div class="form-grid">
               <label>
                 日期
@@ -2607,12 +2649,21 @@ td {
                 <input type="number" id="action-value" min="0" step="0.001" />
               </label>
               <label>
+                分红税
+                <input type="number" id="action-tax" min="0" step="0.01" placeholder="现金分红时填写" />
+              </label>
+              <label>
+                净分红
+                <input type="number" id="action-net" readonly />
+              </label>
+              <label>
                 备注
                 <input type="text" id="action-note" placeholder="例如 10派3、10送2" />
               </label>
             </div>
             <div class="form-actions">
               <button class="primary-button" id="add-corporate-action" type="button">添加公司行为</button>
+              <button class="ghost-button" id="reset-corporate-action" type="button">清空</button>
             </div>
             <div class="table-wrap spacing-top">
               <table>
@@ -2623,6 +2674,8 @@ td {
                     <th>名称</th>
                     <th>类型</th>
                     <th>金额/数量</th>
+                    <th>分红税</th>
+                    <th>净分红</th>
                     <th>备注</th>
                     <th>操作</th>
                   </tr>
@@ -2774,6 +2827,9 @@ const els = {
   matchedRealized: optionalElement("#metric-matched-realized"),
   totalFees: optionalElement("#metric-total-fees"),
   dividends: optionalElement("#metric-dividends"),
+  dividendSummary: optionalElement("#dividend-summary"),
+  dividendDetailBody: optionalElement("#dividend-detail-body"),
+  dividendDetailCards: optionalElement("#dividend-detail-cards"),
   tradePairPnlBody: document.querySelector("#trade-pair-pnl-body"),
   tradePairPnlCards: optionalElement("#trade-pair-pnl-cards"),
   pairStartDate: optionalElement("#pair-start-date"),
@@ -2835,11 +2891,14 @@ const els = {
   initialDate: document.querySelector("#initial-date"),
   initialPositionsBody: document.querySelector("#initial-positions-body"),
   initialPositionsCards: optionalElement("#initial-positions-cards"),
+  editingActionId: optionalElement("#editing-action-id"),
   actionDate: optionalElement("#action-date"),
   actionSymbol: optionalElement("#action-symbol"),
   actionName: optionalElement("#action-name"),
   actionType: optionalElement("#action-type"),
   actionValue: optionalElement("#action-value"),
+  actionTax: optionalElement("#action-tax"),
+  actionNet: optionalElement("#action-net"),
   actionNote: optionalElement("#action-note"),
   corporateActionsBody: optionalElement("#corporate-actions-body"),
   corporateActionsCards: optionalElement("#corporate-actions-cards"),
@@ -3219,7 +3278,12 @@ function applyBonusActions(books) {
 function dividendTotal() {
   return state.corporateActions
     .filter((action) => action.type === "dividend")
-    .reduce((sum, action) => sum + (Number(action.value) || 0), 0);
+    .reduce((sum, action) => sum + dividendNet(action), 0);
+}
+
+function dividendNet(action) {
+  if (!action || action.type !== "dividend") return 0;
+  return (Number(action.value) || 0) - (Number(action.tax) || 0);
 }
 
 function applyOriginalCostAdjustments(books) {
@@ -3238,7 +3302,7 @@ function applyOriginalCostAdjustments(books) {
     }
 
     if (action.type === "dividend") {
-      book.originalCost = Math.max(0, book.originalCost - value);
+      book.originalCost = Math.max(0, book.originalCost - dividendNet(action));
     }
   }
 }
@@ -3324,7 +3388,7 @@ function calculatePortfolio(trades = state.trades) {
     .filter((action) => action.type === "dividend")
     .forEach((action) => {
       const book = books.get(normalizeSymbol(action.symbol));
-      if (book) book.adjustedCost -= Number(action.value) || 0;
+      if (book) book.adjustedCost -= dividendNet(action);
     });
 
   const realizedRows = [];
@@ -3520,7 +3584,7 @@ function calculateRangeSummary(startDate = "", endDate = "") {
   const trades = state.trades.filter((trade) => dateInRange(trade.date, range.startDate, range.endDate));
   const dividends = state.corporateActions
     .filter((action) => action.type === "dividend" && dateInRange(action.date, range.startDate, range.endDate))
-    .reduce((sum, action) => sum + (Number(action.value) || 0), 0);
+    .reduce((sum, action) => sum + dividendNet(action), 0);
   const buyAmount = trades.filter((trade) => trade.side === "buy").reduce((sum, trade) => sum + tradeAmount(trade), 0);
   const sellAmount = trades.filter((trade) => trade.side === "sell").reduce((sum, trade) => sum + tradeAmount(trade), 0);
   const fees = trades.reduce((sum, trade) => sum + totalFee(trade), 0);
@@ -3622,7 +3686,7 @@ function calculatePeriodStockRows(kind, key) {
       const keySymbol = normalizeSymbol(symbol);
       const trades = state.trades.filter((trade) => normalizeSymbol(trade.symbol) === keySymbol && dateInRange(trade.date, bounds.startDate, bounds.endDate));
       const actions = state.corporateActions.filter((action) => normalizeSymbol(action.symbol) === keySymbol && dateInRange(action.date, bounds.startDate, bounds.endDate));
-      const dividends = actions.filter((action) => action.type === "dividend").reduce((sum, action) => sum + (Number(action.value) || 0), 0);
+      const dividends = actions.filter((action) => action.type === "dividend").reduce((sum, action) => sum + dividendNet(action), 0);
       const fees = trades.reduce((sum, trade) => sum + totalFee(trade), 0);
       const matches = rangeMatchDetails(bounds.startDate, bounds.endDate, keySymbol);
       const matched = matches.reduce((sum, match) => sum + match.pnl, 0);
@@ -3703,7 +3767,7 @@ function stockDayReport(symbol, date) {
   const actions = state.corporateActions.filter((action) => normalizeSymbol(action.symbol) === key && action.date === date);
   const snapshot = state.closeSnapshots.find((item) => item.date === date);
   const snapshotPosition = snapshot ? (snapshot.positions || []).find((position) => normalizeSymbol(position.symbol) === key) : null;
-  const dividends = actions.filter((action) => action.type === "dividend").reduce((sum, action) => sum + (Number(action.value) || 0), 0);
+  const dividends = actions.filter((action) => action.type === "dividend").reduce((sum, action) => sum + dividendNet(action), 0);
   const matched = rangeMatchDetails(date, date, key).reduce((sum, match) => sum + match.pnl, 0);
   const buyAmount = trades.filter((trade) => trade.side === "buy").reduce((sum, trade) => sum + tradeAmount(trade), 0);
   const sellAmount = trades.filter((trade) => trade.side === "sell").reduce((sum, trade) => sum + tradeAmount(trade), 0);
@@ -4086,11 +4150,11 @@ function buildFlowRecords() {
       tone: isDividend ? "sell" : "buy",
       price: "-",
       quantity: isDividend ? "-" : number(action.value, 0),
-      amount: isDividend ? money(action.value) : "-",
+      amount: isDividend ? money(dividendNet(action)) : "-",
       commission: "-",
       stampTax: "-",
       transferFee: "-",
-      fee: 0,
+      fee: isDividend ? Number(action.tax) || 0 : 0,
       note: action.note || "",
       order: 0,
     };
@@ -4130,7 +4194,7 @@ function stockEvents(symbol) {
       date: action.date,
       type: action.type === "dividend" ? "分红" : "送股/转增",
       tone: action.type === "dividend" ? "sell" : "buy",
-      detail: action.type === "dividend" ? `现金分红 ${money(action.value)}` : `增加 ${number(action.value, 0)}股`,
+      detail: action.type === "dividend" ? `净分红 ${money(dividendNet(action))}` : `增加 ${number(action.value, 0)}股`,
       note: action.note,
       order: 0,
     }));
@@ -4168,7 +4232,92 @@ function stockDividendTotal(symbol) {
   const key = normalizeSymbol(symbol);
   return state.corporateActions
     .filter((action) => normalizeSymbol(action.symbol) === key && action.type === "dividend")
-    .reduce((sum, action) => sum + (Number(action.value) || 0), 0);
+    .reduce((sum, action) => sum + dividendNet(action), 0);
+}
+
+function dividendDetailRows() {
+  const grouped = new Map();
+  state.corporateActions
+    .filter((action) => action.type === "dividend")
+    .forEach((action) => {
+      const symbol = normalizeSymbol(action.symbol);
+      if (!symbol) return;
+      const row = grouped.get(symbol) || {
+        symbol,
+        name: action.name || symbol,
+        total: 0,
+        gross: 0,
+        tax: 0,
+        count: 0,
+        latestDate: "",
+      };
+      row.name = action.name || row.name;
+      row.gross += Number(action.value) || 0;
+      row.tax += Number(action.tax) || 0;
+      row.total += dividendNet(action);
+      row.count += 1;
+      if ((action.date || "") > row.latestDate) row.latestDate = action.date || "";
+      grouped.set(symbol, row);
+    });
+
+  return [...grouped.values()].sort((a, b) => b.total - a.total || a.symbol.localeCompare(b.symbol));
+}
+
+function renderDividendDetails() {
+  if (!els.dividendSummary || !els.dividendDetailBody || !els.dividendDetailCards) return;
+  const rows = dividendDetailRows();
+  const total = rows.reduce((sum, row) => sum + row.total, 0);
+  const count = rows.reduce((sum, row) => sum + row.count, 0);
+
+  els.dividendSummary.innerHTML = [
+    { label: "净分红", value: money(total), tone: classByValue(total) },
+    { label: "分红股票数", value: number(rows.length, 0), tone: "" },
+    { label: "分红记录数", value: number(count, 0), tone: "" },
+  ]
+    .map((item) => `<article class="metric"><span>${item.label}</span><strong class="${item.tone}">${item.value}</strong></article>`)
+    .join("");
+
+  if (!rows.length) {
+    els.dividendDetailBody.innerHTML = `<tr><td colspan="7" class="empty-state">暂无现金分红记录</td></tr>`;
+    els.dividendDetailCards.innerHTML = `<div class="empty-state">暂无现金分红记录</div>`;
+    return;
+  }
+
+  els.dividendDetailBody.innerHTML = rows
+    .map(
+      (row) => `
+        <tr>
+          <td><span class="stock-name-chip">${row.name}</span></td>
+          <td>${row.symbol}</td>
+          <td>${money(row.gross)}</td>
+          <td>${money(row.tax)}</td>
+          <td class="${classByValue(row.total)}">${money(row.total)}</td>
+          <td>${number(row.count, 0)}</td>
+          <td>${row.latestDate || "-"}</td>
+        </tr>
+      `,
+    )
+    .join("");
+
+  els.dividendDetailCards.innerHTML = rows
+    .map(
+      (row) => `
+        <article class="mobile-card">
+          <div class="mobile-card-head">
+            <strong class="stock-name-chip">${row.name}</strong>
+            <span>${row.symbol}</span>
+          </div>
+          <dl>
+            <div><dt>净分红</dt><dd class="${classByValue(row.total)}">${money(row.total)}</dd></div>
+            <div><dt>税前分红</dt><dd>${money(row.gross)}</dd></div>
+            <div><dt>分红税</dt><dd>${money(row.tax)}</dd></div>
+            <div><dt>次数</dt><dd>${number(row.count, 0)}</dd></div>
+            <div><dt>最近日期</dt><dd>${row.latestDate || "-"}</dd></div>
+          </dl>
+        </article>
+      `,
+    )
+    .join("");
 }
 
 function stockFeeTotal(symbol) {
@@ -4405,7 +4554,7 @@ function renderPositions() {
             <div><dt>清仓日期</dt><dd>${row.closeDate || "-"}</dd></div>
             <div><dt>持有天数</dt><dd>${row.days}</dd></div>
             <div><dt>实现盈亏</dt><dd class="${classByValue(row.realized)}">${money(row.realized)}</dd></div>
-            <div><dt>分红</dt><dd>${money(row.dividends)}</dd></div>
+            <div><dt>净分红</dt><dd>${money(row.dividends)}</dd></div>
             <div><dt>总费用</dt><dd>${money(row.fees)}</dd></div>
             <div><dt>最终盈亏</dt><dd class="${classByValue(row.totalPnl)}">${money(row.totalPnl)}</dd></div>
           </dl>
@@ -4466,6 +4615,7 @@ function renderDashboard() {
     : backupStatusText();
 
   renderAllocation(positions);
+  renderDividendDetails();
   renderEquityCurve();
   renderRangeSummary();
   renderCloseSnapshots();
@@ -4653,7 +4803,7 @@ function renderRangeSummary() {
     { label: "买入金额", value: money(summary.buyAmount), tone: "" },
     { label: "卖出金额", value: money(summary.sellAmount), tone: "" },
     { label: "手续费", value: money(summary.fees), tone: "" },
-    { label: "分红", value: money(summary.dividends), tone: classByValue(summary.dividends) },
+    { label: "净分红", value: money(summary.dividends), tone: classByValue(summary.dividends) },
   ];
 
   els.rangeSummary.innerHTML = cards
@@ -5187,7 +5337,7 @@ function renderStockDetail() {
     <article class="metric"><span>持有天数</span><strong>${days}</strong></article>
     <article class="metric"><span>低买高卖</span><strong class="${classByValue(matchedRealized)}">${money(matchedRealized)}</strong></article>
     <article class="metric"><span>手续费</span><strong>${money(position.totalFees || 0)}</strong></article>
-    <article class="metric"><span>累计分红</span><strong>${money(dividends)}</strong></article>
+    <article class="metric"><span>累计净分红</span><strong>${money(dividends)}</strong></article>
     <article class="metric"><span>总盈亏</span><strong class="${classByValue(totalPnl)}">${money(totalPnl)}</strong></article>
     <article class="metric"><span>总收益率</span><strong class="${classByValue(totalReturnRate)}">${number(totalReturnRate, 2)}%</strong></article>
     <article class="metric"><span>已匹配数量</span><strong>${number(pair.matchedQuantity, 0)}</strong></article>
@@ -5421,7 +5571,7 @@ function renderPerformanceMetrics(overview) {
     { label: "总盈亏", value: money(overview.totalPnl), tone: classByValue(overview.totalPnl) },
     { label: "收益率", value: overview.returnRate === null ? "-" : `${number(overview.returnRate, 2)}%`, tone: classByValue(overview.returnRate || 0) },
     { label: "匹配实现", value: money(overview.matched), tone: classByValue(overview.matched) },
-    { label: "分红", value: money(overview.dividends), tone: classByValue(overview.dividends) },
+    { label: "净分红", value: money(overview.dividends), tone: classByValue(overview.dividends) },
     { label: "手续费", value: money(overview.fees), tone: "" },
     { label: "交易次数", value: `${overview.tradeCount} 笔`, tone: "" },
     { label: "胜率", value: overview.matchCount ? `${number(overview.winRate, 1)}%` : "-", tone: classByValue(overview.winRate - 50) },
@@ -5445,7 +5595,7 @@ function renderPerformanceMetrics(overview) {
 function renderOverallInsights(overview, stockRows) {
   const absParts = [
     { label: "低买高卖实现", value: overview.matched },
-    { label: "现金分红", value: overview.dividends },
+    { label: "净分红", value: overview.dividends },
   ].sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
   const main = absParts[0] || { label: "暂无明显来源", value: 0 };
   const feePressure = Math.abs(overview.totalPnl) > 0 ? (overview.fees / Math.max(Math.abs(overview.totalPnl), 1)) * 100 : 0;
@@ -5503,7 +5653,7 @@ function renderPerformanceStockRows(rows) {
           <dl>
             <div><dt>总盈亏</dt><dd class="${classByValue(row.totalPnl)}">${money(row.totalPnl)}</dd></div>
             <div><dt>匹配实现</dt><dd class="${classByValue(row.matched)}">${money(row.matched)}</dd></div>
-            <div><dt>分红</dt><dd>${money(row.dividends)}</dd></div>
+            <div><dt>净分红</dt><dd>${money(row.dividends)}</dd></div>
             <div><dt>手续费</dt><dd>${money(row.fees)}</dd></div>
             <div><dt>交易</dt><dd>${row.tradeCount}</dd></div>
             <div><dt>胜率</dt><dd>${row.matchCount ? `${number(row.winRate, 1)}%` : "-"}</dd></div>
@@ -5609,7 +5759,7 @@ function renderCorporateActions() {
   const rows = [...state.corporateActions].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 
   if (!rows.length) {
-    els.corporateActionsBody.innerHTML = `<tr><td colspan="7" class="empty-state">暂无分红或送股记录</td></tr>`;
+    els.corporateActionsBody.innerHTML = `<tr><td colspan="9" class="empty-state">暂无分红或送股记录</td></tr>`;
     els.corporateActionsCards.innerHTML = `<div class="empty-state">暂无分红或送股记录</div>`;
     return;
   }
@@ -5623,8 +5773,13 @@ function renderCorporateActions() {
           <td><span class="stock-name-chip">${action.name}</span></td>
           <td>${action.type === "dividend" ? "现金分红" : "送股/转增"}</td>
           <td>${action.type === "dividend" ? money(action.value) : number(action.value, 0)}</td>
+          <td>${action.type === "dividend" ? money(action.tax || 0) : "-"}</td>
+          <td>${action.type === "dividend" ? money(dividendNet(action)) : "-"}</td>
           <td>${action.note || "-"}</td>
-          <td><button class="icon-action" data-delete-action="${action.id}">删除</button></td>
+          <td>
+            <button class="icon-action" data-edit-action="${action.id}">编辑</button>
+            <button class="icon-action" data-delete-action="${action.id}">删除</button>
+          </td>
         </tr>
       `,
     )
@@ -5642,9 +5797,12 @@ function renderCorporateActions() {
             <div><dt>日期</dt><dd>${action.date || "-"}</dd></div>
             <div><dt>类型</dt><dd>${action.type === "dividend" ? "现金分红" : "送股/转增"}</dd></div>
             <div><dt>金额/数量</dt><dd>${action.type === "dividend" ? money(action.value) : number(action.value, 0)}</dd></div>
+            <div><dt>分红税</dt><dd>${action.type === "dividend" ? money(action.tax || 0) : "-"}</dd></div>
+            <div><dt>净分红</dt><dd>${action.type === "dividend" ? money(dividendNet(action)) : "-"}</dd></div>
             <div><dt>备注</dt><dd>${action.note || "-"}</dd></div>
           </dl>
           <div class="row-actions">
+            <button class="icon-action" data-edit-action="${action.id}">编辑</button>
             <button class="icon-action" data-delete-action="${action.id}">删除</button>
           </div>
         </article>
@@ -5653,14 +5811,56 @@ function renderCorporateActions() {
     .join("");
 }
 
+function updateCorporateActionNet() {
+  if (!els.actionNet || !els.actionValue || !els.actionTax || !els.actionType) return;
+  const isDividend = els.actionType.value === "dividend";
+  els.actionTax.disabled = !isDividend;
+  els.actionTax.placeholder = isDividend ? "现金分红时填写" : "送股不需要填写";
+  const net = isDividend ? (Number(els.actionValue.value) || 0) - (Number(els.actionTax.value) || 0) : 0;
+  els.actionNet.value = net ? net.toFixed(2) : "";
+}
+
+function resetCorporateActionForm() {
+  els.editingActionId.value = "";
+  els.actionDate.value = today();
+  els.actionSymbol.value = "";
+  els.actionName.value = "";
+  els.actionType.value = "dividend";
+  els.actionValue.value = "";
+  els.actionTax.value = "";
+  els.actionNet.value = "";
+  els.actionNote.value = "";
+  document.querySelector("#add-corporate-action").textContent = "添加公司行为";
+  updateCorporateActionNet();
+}
+
+function editCorporateAction(id) {
+  const action = state.corporateActions.find((item) => item.id === id);
+  if (!action) return;
+
+  els.editingActionId.value = action.id;
+  els.actionDate.value = action.date || today();
+  els.actionSymbol.value = action.symbol || "";
+  els.actionName.value = action.name || "";
+  els.actionType.value = action.type || "dividend";
+  els.actionValue.value = Number(action.value) || "";
+  els.actionTax.value = action.type === "dividend" ? Number(action.tax) || "" : "";
+  els.actionNote.value = action.note || "";
+  document.querySelector("#add-corporate-action").textContent = "保存公司行为";
+  updateCorporateActionNet();
+  setView("settings");
+}
+
 function addCorporateAction() {
+  const isDividend = els.actionType.value === "dividend";
   const action = {
-    id: uid(),
+    id: els.editingActionId.value || uid(),
     date: els.actionDate.value || today(),
     symbol: normalizeSymbol(els.actionSymbol.value),
     name: els.actionName.value.trim(),
     type: els.actionType.value,
     value: Number(els.actionValue.value) || 0,
+    tax: isDividend ? Number(els.actionTax.value) || 0 : 0,
     note: els.actionNote.value.trim(),
   };
 
@@ -5669,13 +5869,15 @@ function addCorporateAction() {
     return;
   }
 
-  state.corporateActions.push(action);
-  els.actionDate.value = today();
-  els.actionSymbol.value = "";
-  els.actionName.value = "";
-  els.actionType.value = "dividend";
-  els.actionValue.value = "";
-  els.actionNote.value = "";
+  if (isDividend && (action.tax < 0 || action.tax > action.value)) {
+    alert("分红税不能小于 0，也不能大于税前分红金额。");
+    return;
+  }
+
+  const index = state.corporateActions.findIndex((item) => item.id === action.id);
+  if (index >= 0) state.corporateActions[index] = action;
+  else state.corporateActions.push(action);
+  resetCorporateActionForm();
   save();
   renderAll();
 }
@@ -5865,7 +6067,7 @@ function csvCell(value) {
 
 function exportCsv() {
   const rows = [
-    ["日期", "代码", "名称", "类型", "价格", "数量", "金额", "佣金", "印花税", "过户费", "总费用", "备注"],
+    ["日期", "代码", "名称", "类型", "价格", "数量", "金额", "佣金", "印花税", "过户费", "总费用", "分红税", "净分红", "备注"],
     ...state.trades.map((trade) => {
       const fees = tradeFees(trade);
       const fee = fees.commission + fees.stampTax + fees.transferFee;
@@ -5881,6 +6083,8 @@ function exportCsv() {
         fees.stampTax,
         fees.transferFee,
         fee,
+        "",
+        "",
         trade.note || "",
       ];
     }),
@@ -5896,6 +6100,8 @@ function exportCsv() {
       "",
       "",
       "",
+      action.type === "dividend" ? Number(action.tax) || 0 : "",
+      action.type === "dividend" ? dividendNet(action) : "",
       action.note || "",
     ]),
   ];
@@ -6007,6 +6213,10 @@ document.querySelector("#save-fees").addEventListener("click", () => {
 document.querySelector("#add-initial-position").addEventListener("click", addInitialPosition);
 optionalElement("#reset-initial-position").addEventListener("click", resetInitialPositionForm);
 optionalElement("#add-corporate-action").addEventListener("click", addCorporateAction);
+optionalElement("#reset-corporate-action").addEventListener("click", resetCorporateActionForm);
+els.actionType.addEventListener("change", updateCorporateActionNet);
+els.actionValue.addEventListener("input", updateCorporateActionNet);
+els.actionTax.addEventListener("input", updateCorporateActionNet);
 optionalElement("#clear-initial-positions").addEventListener("click", () => {
   if (!confirm("确定清空全部初始持仓吗？流水记录不会删除。")) return;
   state.initialPositions = [];
@@ -6175,17 +6385,29 @@ els.initialPositionsCards.addEventListener("click", (event) => {
 });
 
 els.corporateActionsBody.addEventListener("click", (event) => {
+  const editId = event.target.dataset.editAction;
+  if (editId) {
+    editCorporateAction(editId);
+    return;
+  }
   const id = event.target.dataset.deleteAction;
   if (!id) return;
   state.corporateActions = state.corporateActions.filter((action) => action.id !== id);
+  if (els.editingActionId.value === id) resetCorporateActionForm();
   save();
   renderAll();
 });
 
 els.corporateActionsCards.addEventListener("click", (event) => {
+  const editId = event.target.dataset.editAction;
+  if (editId) {
+    editCorporateAction(editId);
+    return;
+  }
   const id = event.target.dataset.deleteAction;
   if (!id) return;
   state.corporateActions = state.corporateActions.filter((action) => action.id !== id);
+  if (els.editingActionId.value === id) resetCorporateActionForm();
   save();
   renderAll();
 });
@@ -6193,8 +6415,16 @@ els.corporateActionsCards.addEventListener("click", (event) => {
 load();
 resetForm();
 resetInitialPositionForm();
-els.actionDate.value = today();
+resetCorporateActionForm();
 renderAll();
+
+if ("serviceWorker" in navigator && window.location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js").catch((error) => {
+      console.warn("Service worker registration failed:", error);
+    });
+  });
+}
     </script>
   </body>
 </html>
