@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="A股交易">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="0.55" stop-color="#05070b"/>
+      <stop offset="1" stop-color="#26070d"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffe9a6"/>
+      <stop offset="0.48" stop-color="#ffd166"/>
+      <stop offset="1" stop-color="#f2a900"/>
+    </linearGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff8fa0"/>
+      <stop offset="1" stop-color="#ff2f49"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="9" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="1 0 0 0 1  0 0.78 0 0 0.48  0 0 0.2 0 0.16  0 0 0 1 0"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <circle cx="382" cy="112" r="92" fill="#ff4d62" opacity="0.16"/>
+  <circle cx="116" cy="392" r="116" fill="#ffd166" opacity="0.10"/>
+  <path d="M118 318c48-72 127-92 185-65 40 19 46 57 19 78-31 25-91 1-78-38 12-38 78-54 125-17 23 18 36 43 42 72" fill="none" stroke="url(#gold)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+  <path d="M128 319c51-7 91-39 136-35 35 4 50 29 81 22 27-6 42-35 66-74" fill="none" stroke="url(#red)" stroke-width="19" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M355 213h62v62" fill="none" stroke="url(#red)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M151 246l-42-36m66 25 10-55m121 61 31-44m-6 57 58-21" fill="none" stroke="#ffd166" stroke-width="18" stroke-linecap="round"/>
+  <path d="M385 179c18 8 34 23 43 43-24-4-49 1-71 15 2-24 11-43 28-58Z" fill="url(#gold)" filter="url(#glow)"/>
+  <circle cx="395" cy="210" r="7" fill="#05070b"/>
+  <path d="M405 184l36-28m-20 50 45-4" fill="none" stroke="#ff4d62" stroke-width="12" stroke-linecap="round"/>
+</svg>

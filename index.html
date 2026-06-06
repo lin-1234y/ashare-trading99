@@ -8,23 +8,27 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="A股交易" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon-512.png" type="image/png" />
+    <link rel="shortcut icon" href="./icon-512.png" type="image/png" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <style>
 :root {
-  color-scheme: light;
-  --bg: #eef6f4;
-  --surface: #ffffff;
-  --surface-2: #edf5f2;
-  --text: #17202a;
-  --muted: #697586;
-  --line: #d5e1df;
-  --primary: #0f7c80;
-  --primary-strong: #0b5961;
-  --buy: #c9364b;
-  --sell: #0f8f68;
-  --warning: #c98212;
-  --gold: #d5a33f;
-  --ink: #0d2b33;
-  --shadow: 0 18px 45px rgba(26, 66, 78, 0.1);
+  color-scheme: dark;
+  --bg: #05070b;
+  --surface: #111722;
+  --surface-2: #171f2d;
+  --text: #f7ecd1;
+  --muted: #a9b3c7;
+  --line: rgba(255, 214, 138, 0.18);
+  --primary: #ffd166;
+  --primary-strong: #f2a900;
+  --buy: #ff4d62;
+  --sell: #35d07f;
+  --warning: #ffb74d;
+  --gold: #ffd166;
+  --ink: #06080d;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.46);
 }
 
 * {
@@ -35,8 +39,9 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    linear-gradient(135deg, rgba(15, 124, 128, 0.12), transparent 28%),
-    linear-gradient(225deg, rgba(213, 163, 63, 0.16), transparent 35%),
+    radial-gradient(circle at 12% 5%, rgba(255, 209, 102, 0.16), transparent 28%),
+    radial-gradient(circle at 92% 12%, rgba(255, 77, 98, 0.14), transparent 30%),
+    linear-gradient(180deg, #070a10 0%, #05070b 55%, #020306 100%),
     var(--bg);
   color: var(--text);
   font-family:
@@ -114,10 +119,23 @@ button {
   color: #d8e4e9;
 }
 
+.nav-icon {
+  display: inline-grid;
+  width: 18px;
+  margin-right: 6px;
+  place-items: center;
+  color: var(--gold);
+  font-weight: 900;
+}
+
 .nav-button:hover,
 .nav-button.active {
   background: linear-gradient(135deg, #1b5960, #1b3945);
   color: #ffffff;
+}
+
+.nav-button.active .nav-icon {
+  color: #ff4d62;
 }
 
 .sidebar-card {
@@ -143,10 +161,10 @@ button {
   display: none;
   margin-bottom: 18px;
   padding: 14px 16px;
-  border: 1px solid #e8c16a;
+  border: 1px solid rgba(255, 209, 102, 0.48);
   border-radius: 8px;
-  background: #fff8e6;
-  color: #5f4310;
+  background: rgba(255, 209, 102, 0.12);
+  color: #ffe1a0;
   line-height: 1.5;
 }
 
@@ -208,8 +226,9 @@ button {
 }
 
 .primary-button {
-  background: linear-gradient(135deg, var(--primary), #15946f);
-  color: #ffffff;
+  background: linear-gradient(135deg, #ffd166, #ff8f3d);
+  color: #1c1204;
+  font-weight: 800;
 }
 
 .primary-button:hover {
@@ -217,7 +236,7 @@ button {
 }
 
 .ghost-button {
-  background: var(--surface);
+  background: linear-gradient(180deg, #1a2332, #111722);
   border-color: var(--line);
   color: var(--text);
 }
@@ -228,9 +247,9 @@ button {
 }
 
 .danger-button {
-  background: #fff0ef;
-  border-color: #f3b7b2;
-  color: #b82824;
+  background: rgba(255, 77, 98, 0.14);
+  border-color: rgba(255, 77, 98, 0.38);
+  color: #ff8b9a;
 }
 
 .save-status {
@@ -271,7 +290,7 @@ button {
 .metric,
 .panel,
 .form-panel {
-  background: linear-gradient(180deg, #ffffff 0%, #fbfdfc 100%);
+  background: linear-gradient(180deg, rgba(22, 31, 45, 0.96) 0%, rgba(12, 17, 26, 0.96) 100%);
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: var(--shadow);
@@ -279,15 +298,15 @@ button {
 
 .metric {
   padding: 18px;
-  border-top: 3px solid rgba(15, 124, 128, 0.28);
+  border-top: 3px solid rgba(255, 209, 102, 0.7);
 }
 
 .metric:nth-child(3n + 2) {
-  border-top-color: rgba(213, 163, 63, 0.55);
+  border-top-color: rgba(255, 77, 98, 0.72);
 }
 
 .metric:nth-child(3n) {
-  border-top-color: rgba(201, 54, 75, 0.28);
+  border-top-color: rgba(53, 208, 127, 0.72);
 }
 
 .metric span {
@@ -316,9 +335,62 @@ button {
   font-size: 20px;
 }
 
+.dashboard-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.app-modal[hidden] {
+  display: none;
+}
+
+.app-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(10px);
+  display: grid;
+  place-items: center;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
+.modal-card {
+  width: min(920px, 100%);
+  max-height: min(82vh, 760px);
+  overflow: auto;
+  padding: 18px;
+  border: 1px solid rgba(255, 209, 102, 0.28);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #151e2c, #090d15);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.62);
+}
+
+.modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.modal-head h3 {
+  margin: 0 0 4px;
+}
+
+.modal-head span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .panel-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
 }
 
@@ -557,7 +629,7 @@ button {
   padding: 9px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--surface-2);
+  background: linear-gradient(180deg, #151f2f, #0d1420);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -577,13 +649,13 @@ button {
 }
 
 .pnl-day.positive-day {
-  border-color: rgba(194, 59, 66, 0.32);
-  background: #fff3f3;
+  border-color: rgba(255, 77, 98, 0.48);
+  background: linear-gradient(180deg, rgba(255, 77, 98, 0.18), rgba(42, 12, 20, 0.78));
 }
 
 .pnl-day.negative-day {
-  border-color: rgba(24, 128, 95, 0.32);
-  background: #effaf5;
+  border-color: rgba(53, 208, 127, 0.44);
+  background: linear-gradient(180deg, rgba(53, 208, 127, 0.15), rgba(8, 35, 25, 0.78));
 }
 
 .pnl-day strong {
@@ -598,6 +670,44 @@ button {
 .pnl-day span {
   font-weight: 800;
   overflow-wrap: anywhere;
+}
+
+.calendar-amount {
+  display: grid;
+  gap: 1px;
+  line-height: 1.05;
+}
+
+.calendar-amount em {
+  font-style: normal;
+  font-size: 10px;
+}
+
+.calendar-amount b {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.calendar-total {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 209, 102, 0.32);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(255, 209, 102, 0.16), rgba(255, 77, 98, 0.08));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.calendar-total span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.calendar-total strong {
+  font-size: 22px;
 }
 
 .pnl-day small {
@@ -692,8 +802,8 @@ button {
   width: 100%;
   min-height: 44px;
   border-radius: 8px;
-  border: 1px solid rgba(23, 107, 135, 0.18);
-  background: #ffffff;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, #172132, #101723);
   color: var(--text);
   display: grid;
   grid-template-columns: minmax(90px, 1fr) minmax(90px, 1fr) auto;
@@ -826,7 +936,7 @@ button {
   padding: 12px;
   border-radius: 8px;
   background: var(--surface-2);
-  color: #26333d;
+  color: var(--text);
   line-height: 1.55;
 }
 
@@ -861,7 +971,7 @@ select {
   min-height: 42px;
   border-radius: 8px;
   border: 1px solid var(--line);
-  background: #ffffff;
+  background: #0b1019;
   color: var(--text);
   padding: 0 12px;
   outline: none;
@@ -870,7 +980,7 @@ select {
 input:focus,
 select:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(23, 107, 135, 0.14);
+  box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.18);
 }
 
 .quote-box {
@@ -923,7 +1033,7 @@ th {
   color: var(--muted);
   font-size: 13px;
   font-weight: 700;
-  background: #f8fafc;
+  background: #182234;
 }
 
 td {
@@ -942,12 +1052,12 @@ td {
 
 .tag.buy {
   color: var(--buy);
-  background: #fff0ef;
+  background: rgba(255, 77, 98, 0.14);
 }
 
 .tag.sell {
   color: var(--sell);
-  background: #eaf8f2;
+  background: rgba(53, 208, 127, 0.14);
 }
 
 .positive {
@@ -969,7 +1079,8 @@ td {
   min-height: 30px;
   border-radius: 8px;
   border: 1px solid var(--line);
-  background: #ffffff;
+  background: #121a27;
+  color: var(--text);
   padding: 0 10px;
 }
 
@@ -993,6 +1104,18 @@ td {
   min-height: 36px;
 }
 
+.month-switcher {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(56px, 1fr));
+  gap: 6px;
+  grid-column: 1 / -1;
+}
+
+.month-switcher .ghost-button.small {
+  min-height: 36px;
+  padding: 0 10px;
+}
+
 .current-price-input {
   width: 112px;
   min-height: 34px;
@@ -1007,7 +1130,7 @@ td {
 .mobile-card {
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #ffffff;
+  background: linear-gradient(180deg, #151e2c, #0d1320);
   padding: 14px;
   display: grid;
   gap: 12px;
@@ -1027,6 +1150,31 @@ td {
 .mobile-card-head span:not(.tag) {
   color: var(--muted);
   font-size: 13px;
+}
+
+.allocation-row strong,
+.position-card-head strong,
+#detail-title {
+  color: var(--buy);
+}
+
+.stock-name-chip,
+.allocation-row strong,
+.position-card-head strong,
+#detail-title {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 26px;
+  align-items: center;
+  border: 1px solid rgba(255, 77, 98, 0.34);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(255, 77, 98, 0.18), rgba(255, 209, 102, 0.08));
+  color: var(--buy);
+  padding: 2px 8px;
+  font-weight: 900;
+  text-shadow: 0 0 14px rgba(255, 77, 98, 0.18);
+  overflow-wrap: anywhere;
 }
 
 .mobile-card dl {
@@ -1111,7 +1259,7 @@ td {
 
 @media (max-width: 620px) {
   body {
-    padding-bottom: 126px;
+    padding-bottom: 154px;
   }
 
   input,
@@ -1120,7 +1268,7 @@ td {
   }
 
   .content {
-    padding: 12px 10px 132px;
+    padding: 12px 10px 158px;
   }
 
   .topbar {
@@ -1141,19 +1289,56 @@ td {
     bottom: 0;
     z-index: 20;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 6px;
-    padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+    gap: 8px;
+    padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
     background: rgba(13, 43, 51, 0.98);
     border-top: 1px solid rgba(255, 255, 255, 0.12);
   }
 
   .nav-button {
-    min-height: 36px;
-    padding: 0 4px;
-    font-size: 11px;
+    min-height: 44px;
+    padding: 0 6px;
+    font-size: 12px;
+    font-weight: 800;
     border-radius: 8px;
     text-align: center;
     background: rgba(255, 255, 255, 0.05);
+  }
+
+  .nav-icon {
+    display: block;
+    width: auto;
+    margin: 0 0 2px;
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .dashboard-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-actions .ghost-button {
+    min-height: 44px;
+  }
+
+  .app-modal {
+    padding: 10px;
+    align-items: end;
+  }
+
+  .modal-card {
+    width: 100%;
+    max-height: 86vh;
+    padding: 14px;
+    border-radius: 10px 10px 0 0;
+  }
+
+  .modal-head {
+    align-items: center;
+  }
+
+  .calendar-total strong {
+    font-size: 20px;
   }
 
   .sidebar {
@@ -1312,6 +1497,16 @@ td {
     min-height: 34px;
   }
 
+  .month-switcher {
+    width: 100%;
+    gap: 6px;
+  }
+
+  .month-switcher .ghost-button.small {
+    min-width: 0;
+    padding: 0 6px;
+  }
+
   .search-box {
     grid-template-columns: 1fr;
     gap: 6px;
@@ -1432,7 +1627,7 @@ td {
   .mobile-card {
     padding: 10px;
     gap: 8px;
-    background: linear-gradient(180deg, #ffffff 0%, #f8fbfa 100%);
+    background: linear-gradient(180deg, #151e2c 0%, #0d1320 100%);
   }
 
   .mobile-card dl {
@@ -1596,14 +1791,14 @@ td {
         </div>
 
         <nav class="nav">
-          <button class="nav-button active" data-view="dashboard">总览</button>
-          <button class="nav-button" data-view="close-snapshots">收盘</button>
-          <button class="nav-button" data-view="trade-form">交易</button>
-          <button class="nav-button" data-view="positions">持仓</button>
-          <button class="nav-button" data-view="records">流水</button>
-          <button class="nav-button" data-view="performance-summary">总结</button>
-          <button class="nav-button" data-view="reports">复盘</button>
-          <button class="nav-button" data-view="settings">设置</button>
+          <button class="nav-button active" data-view="dashboard"><span class="nav-icon">◆</span>总览</button>
+          <button class="nav-button" data-view="close-snapshots"><span class="nav-icon">●</span>收盘</button>
+          <button class="nav-button" data-view="trade-form"><span class="nav-icon">＋</span>交易</button>
+          <button class="nav-button" data-view="positions"><span class="nav-icon">▲</span>持仓</button>
+          <button class="nav-button" data-view="records"><span class="nav-icon">≡</span>流水</button>
+          <button class="nav-button" data-view="performance-summary"><span class="nav-icon">★</span>总结</button>
+          <button class="nav-button" data-view="reports"><span class="nav-icon">▦</span>复盘</button>
+          <button class="nav-button" data-view="settings"><span class="nav-icon">⚙</span>设置</button>
         </nav>
 
         <div class="sidebar-card">
@@ -1685,49 +1880,78 @@ td {
           <div class="panel-grid">
             <section class="panel">
               <div class="panel-header">
-                <h3>各股仓位</h3>
-                <span id="summary-count">0 笔交易</span>
-              </div>
-              <div class="allocation-layout">
-                <div class="pie-chart" id="allocation-pie"></div>
-                <div class="allocation-list" id="allocation-list"></div>
-              </div>
-            </section>
-
-            <section class="panel">
-              <div class="panel-header">
                 <h3>收盘盈亏日历</h3>
                 <label class="search-box">
                   <span>年月</span>
                   <input type="month" id="calendar-month" />
                 </label>
+                <div class="month-switcher" aria-label="收盘盈亏日历月份切换">
+                  <button class="ghost-button small" id="calendar-prev-month" type="button">上月</button>
+                  <button class="ghost-button small" id="calendar-current-month" type="button">本月</button>
+                  <button class="ghost-button small" id="calendar-next-month" type="button">下月</button>
+                </div>
               </div>
-              <div class="equity-chart" id="asset-line-chart"></div>
               <div class="equity-chart" id="equity-chart"></div>
-              <div class="range-summary" id="drawdown-summary"></div>
-              <div class="table-wrap compact-table">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>日期</th>
-                      <th>当日盈亏</th>
-                      <th>累计盈亏</th>
-                      <th>总资产</th>
-                    </tr>
-                  </thead>
-                  <tbody id="equity-curve-body"></tbody>
-                </table>
+              <div class="calendar-total">
+                <div>
+                  <span>当月收益</span>
+                  <strong id="calendar-month-total">¥0</strong>
+                </div>
+                <div>
+                  <span>收益率</span>
+                  <strong id="calendar-month-return">0.00%</strong>
+                </div>
               </div>
-              <div class="mobile-list" id="equity-curve-cards"></div>
             </section>
           </div>
 
-          <section class="panel spacing-top">
-            <div class="panel-header">
+          <div class="dashboard-actions spacing-top">
+            <button class="ghost-button" type="button" data-modal-open="asset-chart-modal">资产曲线</button>
+            <button class="ghost-button" type="button" data-modal-open="allocation-modal">各股仓位</button>
+            <button class="ghost-button" type="button" data-modal-open="range-modal">任意区间盈亏</button>
+            <button class="ghost-button" type="button" data-modal-open="pair-modal">各股匹配盈亏</button>
+          </div>
+        </section>
+
+        <section class="app-modal" id="asset-chart-modal" hidden>
+          <div class="modal-card">
+            <div class="modal-head">
+              <div>
+                <h3>资产曲线</h3>
+                <span>根据每日收盘记录生成，含资产走势和最大回撤</span>
+              </div>
+              <button class="icon-action" type="button" data-modal-close>关闭</button>
+            </div>
+            <div class="equity-chart" id="asset-line-chart"></div>
+          </div>
+        </section>
+
+        <section class="app-modal" id="allocation-modal" hidden>
+          <div class="modal-card">
+            <div class="modal-head">
+              <div>
+                <h3>各股仓位</h3>
+                <span id="summary-count">0 笔交易</span>
+              </div>
+              <button class="icon-action" type="button" data-modal-close>关闭</button>
+            </div>
+            <div class="allocation-layout">
+              <div class="pie-chart" id="allocation-pie"></div>
+              <div class="allocation-list" id="allocation-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="app-modal" id="range-modal" hidden>
+          <div class="modal-card">
+            <div class="modal-head">
               <div>
                 <h3>任意区间盈亏</h3>
                 <span>选择开始和结束日期，统计这段时间的阶段盈亏</span>
               </div>
+              <button class="icon-action" type="button" data-modal-close>关闭</button>
+            </div>
+            <div class="panel-header">
               <div class="date-filter">
                 <label>
                   开始
@@ -1740,14 +1964,19 @@ td {
               </div>
             </div>
             <div class="range-summary" id="range-summary"></div>
-          </section>
+          </div>
+        </section>
 
-          <section class="panel spacing-top">
-            <div class="panel-header">
+        <section class="app-modal" id="pair-modal" hidden>
+          <div class="modal-card">
+            <div class="modal-head">
               <div>
                 <h3>各股匹配盈亏</h3>
                 <span>原来持仓不参与匹配，先卖后买显示负的未匹配数量</span>
               </div>
+              <button class="icon-action" type="button" data-modal-close>关闭</button>
+            </div>
+            <div class="panel-header">
               <div class="date-filter">
                 <label>
                   开始
@@ -1773,7 +2002,7 @@ td {
               </table>
             </div>
             <div class="mobile-list" id="trade-pair-pnl-cards"></div>
-          </section>
+          </div>
         </section>
 
         <section class="view" id="close-snapshots">
@@ -1918,6 +2147,11 @@ td {
                   月份
                   <input type="month" id="report-month" />
                 </label>
+                <div class="month-switcher" aria-label="个股盈亏日历月份切换">
+                  <button class="ghost-button small" id="report-prev-month" type="button">上月</button>
+                  <button class="ghost-button small" id="report-current-month" type="button">本月</button>
+                  <button class="ghost-button small" id="report-next-month" type="button">下月</button>
+                </div>
               </div>
             </div>
             <div class="metric-grid six" id="report-summary-metrics"></div>
@@ -2508,6 +2742,11 @@ const els = {
   equityCurveBody: optionalElement("#equity-curve-body"),
   equityCurveCards: optionalElement("#equity-curve-cards"),
   calendarMonth: optionalElement("#calendar-month"),
+  calendarMonthTotal: optionalElement("#calendar-month-total"),
+  calendarMonthReturn: optionalElement("#calendar-month-return"),
+  calendarPrevMonth: optionalElement("#calendar-prev-month"),
+  calendarCurrentMonth: optionalElement("#calendar-current-month"),
+  calendarNextMonth: optionalElement("#calendar-next-month"),
   rangeStartDate: optionalElement("#range-start-date"),
   rangeEndDate: optionalElement("#range-end-date"),
   rangeSummary: optionalElement("#range-summary"),
@@ -2543,6 +2782,9 @@ const els = {
   stockTimeline: optionalElement("#stock-timeline"),
   reportSymbol: optionalElement("#report-symbol"),
   reportMonth: optionalElement("#report-month"),
+  reportPrevMonth: optionalElement("#report-prev-month"),
+  reportCurrentMonth: optionalElement("#report-current-month"),
+  reportNextMonth: optionalElement("#report-next-month"),
   reportSummaryMetrics: optionalElement("#report-summary-metrics"),
   reportCalendar: optionalElement("#report-calendar"),
   reportDailyBody: optionalElement("#report-daily-body"),
@@ -2624,6 +2866,26 @@ function money(value) {
   }).format(Number(value) || 0);
 }
 
+function moneyInt(value) {
+  return new Intl.NumberFormat("zh-CN", {
+    style: "currency",
+    currency: "CNY",
+    maximumFractionDigits: 0,
+  }).format(Math.round(Number(value) || 0));
+}
+
+function calendarMoney(value) {
+  const rounded = Math.round(Number(value) || 0);
+  if (!rounded) return "-";
+  const sign = rounded < 0 ? "-" : "";
+  return `
+    <span class="calendar-amount">
+      <em>${sign}¥</em>
+      <b>${new Intl.NumberFormat("zh-CN", { maximumFractionDigits: 0 }).format(Math.abs(rounded))}</b>
+    </span>
+  `;
+}
+
 function number(value, digits = 2) {
   return new Intl.NumberFormat("zh-CN", {
     minimumFractionDigits: digits,
@@ -2641,6 +2903,18 @@ function today() {
 
 function currentMonthKey() {
   return today().slice(0, 7);
+}
+
+function shiftMonthKey(monthKey = currentMonthKey(), offset = 0) {
+  const [year, month] = String(monthKey || currentMonthKey()).split("-").map(Number);
+  const date = new Date(year || beijingNow().getFullYear(), (month || 1) - 1 + offset, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function setCalendarMonth(input, monthKey, renderFn) {
+  if (!input) return;
+  input.value = monthKey;
+  renderFn();
 }
 
 function monthStartDate(monthKey = currentMonthKey()) {
@@ -3944,7 +4218,7 @@ function renderRecords() {
         <tr>
           <td>${row.date || "-"}</td>
           <td>${row.symbol}</td>
-          <td>${row.name}</td>
+          <td><span class="stock-name-chip">${row.name}</span></td>
           <td><span class="tag ${row.tone}">${row.type}</span></td>
           <td>${row.price}</td>
           <td>${row.quantity}</td>
@@ -3975,7 +4249,7 @@ function renderRecords() {
       return `
         <article class="mobile-card">
           <div class="mobile-card-head">
-            <strong>${row.name}</strong>
+            <strong class="stock-name-chip">${row.name}</strong>
             <span class="tag ${row.tone}">${row.type}</span>
           </div>
           <dl>
@@ -4042,7 +4316,7 @@ function renderPositions() {
         return `
           <tr>
             <td>${position.symbol}</td>
-            <td>${position.name}</td>
+            <td><span class="stock-name-chip">${position.name}</span></td>
             <td>${number(position.quantity, 0)}</td>
             <td>${money(position.initialAverageCost)}</td>
             <td>${money(position.averageCost)}</td>
@@ -4067,7 +4341,7 @@ function renderPositions() {
           <article class="mobile-card position-card">
             <div class="position-card-head">
               <div>
-                <strong>${position.name}</strong>
+                <strong class="stock-name-chip">${position.name}</strong>
                 <span>${position.symbol}</span>
               </div>
               <button class="icon-action" data-detail-symbol="${position.symbol}">详情</button>
@@ -4106,7 +4380,7 @@ function renderPositions() {
       (row) => `
         <tr>
           <td>${row.symbol}</td>
-          <td>${row.name}</td>
+          <td><span class="stock-name-chip">${row.name}</span></td>
           <td>${row.closeDate || "-"}</td>
           <td>${row.days}</td>
           <td class="${classByValue(row.realized)}">${money(row.realized)}</td>
@@ -4124,7 +4398,7 @@ function renderPositions() {
       (row) => `
         <article class="mobile-card">
           <div class="mobile-card-head">
-            <strong>${row.name}</strong>
+            <strong class="stock-name-chip">${row.name}</strong>
             <span>${row.symbol}</span>
           </div>
           <dl>
@@ -4209,7 +4483,7 @@ function renderAllocation(positions) {
   const colors = ["#176b87", "#c23b42", "#18805f", "#b76e00", "#5a4fcf", "#0f8b8d", "#9b5de5", "#ef476f"];
 
   if ((!open.length || total <= 0) && cash <= 0) {
-    els.allocationPie.style.background = "#eef3f8";
+    els.allocationPie.style.background = "#151e2c";
     els.allocationPie.innerHTML = `<span>暂无市值</span>`;
     els.allocationList.innerHTML = `<div class="empty-state">输入持仓当前价后显示仓位饼图</div>`;
     return;
@@ -4254,7 +4528,7 @@ function renderAllocation(positions) {
       rows.push(`
         <div class="allocation-row">
           <span class="swatch" style="background: ${color}"></span>
-          <strong>${position.name}</strong>
+          <strong class="stock-name-chip">${position.name}</strong>
           <span>${number(percent, 1)}%</span>
           <span>${money(position.marketValue)}</span>
         </div>
@@ -4308,10 +4582,19 @@ function renderEquityCurve() {
 function renderPnlCalendar(rows) {
   const monthKey = els.calendarMonth.value || currentMonthKey();
   const [year, month] = monthKey.split("-").map(Number);
-  const pnlByDate = new Map(rows.filter((row) => row.date.startsWith(monthKey)).map((row) => [row.date, row.periodPnl]));
+  const monthRows = rows.filter((row) => row.date.startsWith(monthKey));
+  const monthTotal = monthRows.reduce((sum, row) => sum + (Number(row.periodPnl) || 0), 0);
+  const pnlByDate = new Map(monthRows.map((row) => [row.date, row.periodPnl]));
   const firstDay = new Date(year, month - 1, 1).getDay();
   const daysInMonth = new Date(year, month, 0).getDate();
   const cells = [];
+  els.calendarMonthTotal.textContent = moneyInt(monthTotal);
+  els.calendarMonthTotal.className = classByValue(monthTotal);
+  const firstMonthRow = monthRows[0];
+  const monthStartAssets = firstMonthRow ? (Number(firstMonthRow.assets) || 0) - (Number(firstMonthRow.periodPnl) || 0) : 0;
+  const monthReturn = monthStartAssets > 0 ? (monthTotal / monthStartAssets) * 100 : 0;
+  els.calendarMonthReturn.textContent = `${number(monthReturn, 2)}%`;
+  els.calendarMonthReturn.className = classByValue(monthReturn);
 
   for (let index = 0; index < firstDay; index += 1) {
     cells.push(`<div class="pnl-day empty" aria-hidden="true"></div>`);
@@ -4324,7 +4607,7 @@ function renderPnlCalendar(rows) {
     cells.push(`
       <div class="pnl-day ${tone}">
         <time>${day}</time>
-        <span class="${classByValue(pnl)}">${pnl ? money(pnl) : "-"}</span>
+        <span class="${classByValue(pnl)}">${calendarMoney(pnl)}</span>
       </div>
     `);
   }
@@ -4458,7 +4741,7 @@ function renderCloseSnapshotPositions(snapshot) {
       (position) => `
         <article class="mobile-card">
           <div class="mobile-card-head">
-            <strong>${position.name}</strong>
+            <strong class="stock-name-chip">${position.name}</strong>
             <span>${position.symbol}</span>
           </div>
           <dl>
@@ -4493,7 +4776,7 @@ function renderCloseSnapshotPositions(snapshot) {
             .map(
               (position) => `
                 <tr>
-                  <td>${position.name}<small class="subtle-detail">${position.symbol}</small></td>
+                  <td><span class="stock-name-chip">${position.name}</span><small class="subtle-detail">${position.symbol}</small></td>
                   <td>${number(position.quantity, 0)}</td>
                   <td>${money(position.price)}</td>
                   <td>${money(position.marketValue)}</td>
@@ -4788,7 +5071,7 @@ function renderTradePairPnL() {
     .map(
       (row) => `
         <tr>
-          <td>${row.name}</td>
+          <td><span class="stock-name-chip">${row.name}</span></td>
           <td>${number(row.matchedQuantity, 0)}</td>
           <td class="${classByValue(row.unmatchedQuantity)}">${number(row.unmatchedQuantity, 0)}${renderUnmatchedDetail(row)}</td>
           <td class="${classByValue(row.pnl)}">${money(row.pnl)}</td>
@@ -4802,7 +5085,7 @@ function renderTradePairPnL() {
       (row) => `
         <article class="mobile-card">
           <div class="mobile-card-head">
-            <strong>${row.name}</strong>
+            <strong class="stock-name-chip">${row.name}</strong>
             <span>${row.symbol}</span>
           </div>
           <dl>
@@ -5059,9 +5342,9 @@ function renderStockReportCalendar(rows, monthKey) {
     cells.push(`
       <div class="pnl-day stock-report-day ${tone}">
         <time>${day}</time>
-        <span class="${classByValue(pnl)}">日 ${row ? money(pnl) : "-"}</span>
-        <small>配 ${row ? money(row.matched) : "-"}</small>
-        <small>额 ${row ? money(row.turnover) : "-"}</small>
+        <span class="${classByValue(pnl)}">日 ${row ? calendarMoney(pnl) : "-"}</span>
+        <small>配 ${row ? moneyInt(row.matched) : "-"}</small>
+        <small>额 ${row ? moneyInt(row.turnover) : "-"}</small>
       </div>
     `);
   }
@@ -5196,7 +5479,7 @@ function renderPerformanceStockRows(rows) {
     .map(
       (row) => `
         <tr>
-          <td>${row.name}<small class="subtle-detail">${row.symbol}</small></td>
+          <td><span class="stock-name-chip">${row.name}</span><small class="subtle-detail">${row.symbol}</small></td>
           <td class="${classByValue(row.totalPnl)}">${money(row.totalPnl)}</td>
           <td class="${classByValue(row.matched)}">${money(row.matched)}</td>
           <td>${money(row.dividends)}</td>
@@ -5214,7 +5497,7 @@ function renderPerformanceStockRows(rows) {
       (row) => `
         <article class="mobile-card">
           <div class="mobile-card-head">
-            <strong>${row.name}</strong>
+            <strong class="stock-name-chip">${row.name}</strong>
             <span>${row.symbol}</span>
           </div>
           <dl>
@@ -5281,7 +5564,7 @@ function renderSettings() {
         <tr>
           <td>${item.date || "-"}</td>
           <td>${item.symbol}</td>
-          <td>${item.name}</td>
+          <td><span class="stock-name-chip">${item.name}</span></td>
           <td>${number(item.quantity, 0)}</td>
           <td>${money(item.cost)}</td>
           <td>${money(item.quantity > 0 ? item.cost / item.quantity : 0)}</td>
@@ -5302,7 +5585,7 @@ function renderSettings() {
       (item) => `
         <article class="mobile-card">
           <div class="mobile-card-head">
-            <strong>${item.name}</strong>
+            <strong class="stock-name-chip">${item.name}</strong>
             <span>${item.symbol}</span>
           </div>
           <dl>
@@ -5337,7 +5620,7 @@ function renderCorporateActions() {
         <tr>
           <td>${action.date || "-"}</td>
           <td>${action.symbol}</td>
-          <td>${action.name}</td>
+          <td><span class="stock-name-chip">${action.name}</span></td>
           <td>${action.type === "dividend" ? "现金分红" : "送股/转增"}</td>
           <td>${action.type === "dividend" ? money(action.value) : number(action.value, 0)}</td>
           <td>${action.note || "-"}</td>
@@ -5352,7 +5635,7 @@ function renderCorporateActions() {
       (action) => `
         <article class="mobile-card">
           <div class="mobile-card-head">
-            <strong>${action.name}</strong>
+            <strong class="stock-name-chip">${action.name}</strong>
             <span>${action.symbol}</span>
           </div>
           <dl>
@@ -5651,6 +5934,33 @@ document.querySelectorAll("[data-jump]").forEach((button) => {
   button.addEventListener("click", () => setView(button.dataset.jump));
 });
 
+function openModal(id) {
+  const modal = document.getElementById(id);
+  if (!modal) return;
+  modal.hidden = false;
+  document.body.classList.add("modal-open");
+}
+
+function closeModal(modal) {
+  if (!modal) return;
+  modal.hidden = true;
+  if (!document.querySelector(".app-modal:not([hidden])")) document.body.classList.remove("modal-open");
+}
+
+document.querySelectorAll("[data-modal-open]").forEach((button) => {
+  button.addEventListener("click", () => openModal(button.dataset.modalOpen));
+});
+
+document.querySelectorAll("[data-modal-close]").forEach((button) => {
+  button.addEventListener("click", () => closeModal(button.closest(".app-modal")));
+});
+
+document.querySelectorAll(".app-modal").forEach((modal) => {
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) closeModal(modal);
+  });
+});
+
 els.form.addEventListener("input", updatePreview);
 els.side.addEventListener("change", updatePreview);
 els.symbol.addEventListener("change", () => fillStockInfo(els.symbol, els.name));
@@ -5727,6 +6037,9 @@ document.querySelector("#import-data").addEventListener("change", (event) => {
 
 els.recordFilter.addEventListener("input", renderRecords);
 els.calendarMonth.addEventListener("change", renderEquityCurve);
+els.calendarPrevMonth.addEventListener("click", () => setCalendarMonth(els.calendarMonth, shiftMonthKey(els.calendarMonth.value, -1), renderEquityCurve));
+els.calendarCurrentMonth.addEventListener("click", () => setCalendarMonth(els.calendarMonth, currentMonthKey(), renderEquityCurve));
+els.calendarNextMonth.addEventListener("click", () => setCalendarMonth(els.calendarMonth, shiftMonthKey(els.calendarMonth.value, 1), renderEquityCurve));
 els.closeSnapshotDate.addEventListener("change", renderCloseSnapshots);
 els.closeSnapshotStartDate.addEventListener("change", renderCloseSnapshots);
 els.closeSnapshotEndDate.addEventListener("change", renderCloseSnapshots);
@@ -5742,6 +6055,9 @@ els.closeSnapshotCards.addEventListener("click", (event) => {
 els.saveStockPlan.addEventListener("click", saveStockPlan);
 els.reportSymbol.addEventListener("change", renderReports);
 els.reportMonth.addEventListener("change", renderReports);
+els.reportPrevMonth.addEventListener("click", () => setCalendarMonth(els.reportMonth, shiftMonthKey(els.reportMonth.value, -1), renderReports));
+els.reportCurrentMonth.addEventListener("click", () => setCalendarMonth(els.reportMonth, currentMonthKey(), renderReports));
+els.reportNextMonth.addEventListener("click", () => setCalendarMonth(els.reportMonth, shiftMonthKey(els.reportMonth.value, 1), renderReports));
 els.rangeStartDate.addEventListener("change", renderRangeSummary);
 els.rangeEndDate.addEventListener("change", renderRangeSummary);
 els.summaryKindButtons.forEach((button) => {
